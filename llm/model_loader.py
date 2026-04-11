@@ -1,7 +1,7 @@
 from transformers import AutoTokenizer, AutoModelForCausalLM, BitsAndBytesConfig
 import torch
 
-MODEL_NAME = "google/medgemma-4b-it"
+MODEL_NAME = "google/gemma-2-2b-it"
 
 
 class ModelLoader:
