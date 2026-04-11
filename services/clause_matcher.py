@@ -1,110 +1,78 @@
-import json
+# services/clause_matcher.py
+
 import re
+from typing import Dict, List, Optional, Any
+from services.synonyms import get_synonyms
 
-from schemas.intermediate import ClauseMatchResult
-from llm.generation import generate
-from llm.prompts import clause_matching_prompt
-from services.rule_engine import classify_rejection_rule_based
+class ClauseMatcher:
+    """
+    Normalizes and validates extracted policy clauses.
+    Ensures that values match industry formats and handles synonyms.
+    """
 
+    def __init__(self):
+        # Map of clause types to their expected standard formats
+        self.standard_formats = {
+            "waiting_period": r"(\d+)\s*(days?|months?|years?)",
+            "co_payment": r"(\d+)%",
+            "sum_insured": r"₹?([\d,]+)",
+            "room_rent_limit": r"(?:₹?([\d,]+)|(?:single|private)\s*room|no\s*limit)",
+        }
 
-# Shared defaults for fallback and rule-based results
-_CLAUSE_DEFAULTS = {
-    "clause_category":    "Other / unclear",
-    "clause_detected":    "Unclear",
-    "clause_clarity":     "Low",
-    "rejection_alignment": "Partial",
-    "explanation":        "Unable to confidently interpret rejection clause.",
-    "confidence":         "Low",
-}
+    def normalize_value(self, clause_type: str, raw_value: str) -> Any:
+        """
+        Normalize a raw value into a standard format
+        """
+        if not raw_value:
+            return "Not Found"
+            
+        val_lower = str(raw_value).lower().strip()
+        
+        # Specific normalization logic
+        if clause_type == "waiting_period":
+            match = re.search(self.standard_formats[clause_type], val_lower)
+            if match:
+                return f"{match.group(1)} {match.group(2)}"
+        
+        if clause_type == "co_payment":
+            match = re.search(self.standard_formats[clause_type], val_lower)
+            if match:
+                return f"{match.group(1)}%"
+                
+        if clause_type == "sum_insured":
+            # Remove currency symbols and commas
+            nums = re.findall(r'\d+', val_lower.replace(',', ''))
+            if nums:
+                return f"₹{int(nums[0]):,}"
 
+        return raw_value.capitalize()
 
-def _safe_json_parse(raw: str) -> dict | None:
-    """Try clean parse first, then regex extraction."""
-    try:
-        return json.loads(raw.strip())
-    except Exception:
-        pass
-    match = re.search(r"\{[\s\S]*\}", raw)
-    if match:
-        try:
-            return json.loads(match.group(0))
-        except Exception:
-            pass
-    return None
+    def get_risk_level(self, clause_type: str, value: Any) -> str:
+        """
+        Basic risk scoring based on policy values
+        """
+        val_str = str(value).lower()
+        
+        if clause_type == "co_payment":
+            digits = re.findall(r'\d+', val_str)
+            if digits and int(digits[0]) > 20:
+                return "HIGH"
+            if digits and int(digits[0]) > 0:
+                return "MODERATE"
+            return "LOW"
+            
+        if clause_type == "waiting_period":
+            if "year" in val_str or ("month" in val_str and int(re.findall(r'\d+', val_str)[0]) > 12):
+                return "MODERATE"
+                
+        return "LOW"
 
-
-def run_clause_matcher(
-    model,
-    tokenizer,
-    policy_text: str,
-    rejection_text: str,
-    user_context: str | None = None,
-) -> ClauseMatchResult:
-
-    # --------------------------------------------------
-    # 🔒 INPUT CLEANING
-    # --------------------------------------------------
-    policy_text    = re.sub(r"\s+", " ", (policy_text or "").strip())[:4000]
-    rejection_text = re.sub(r"\s+", " ", (rejection_text or "").strip())[:1500]
-    user_context   = re.sub(r"\s+", " ", (user_context or "").strip())[:500]
-
-    # --------------------------------------------------
-    # 1️⃣ RULE-BASED CHECK (fast path)
-    # --------------------------------------------------
-    category = classify_rejection_rule_based(rejection_text)
-
-    if category:
-        # ✅ Return meaningful strings downstream steps can use,
-        #    not a hardcoded "Detected via rule-based keyword match"
-        return ClauseMatchResult(
-            clause_category=category,
-            clause_detected=f"Policy clause: {category}",
-            clause_clarity="High",
-            rejection_alignment="Strong",
-            explanation=(
-                f"Rejection reason matches standard policy clause category: '{category}'. "
-                "Detected via rule-based keyword analysis."
-            ),
-            confidence="High",
-        )
-
-    # --------------------------------------------------
-    # 2️⃣ LLM CLAUSE MATCHING
-    # --------------------------------------------------
-    prompt = clause_matching_prompt(policy_text, rejection_text, user_context)
-
-    raw_output = generate(
-        prompt, model, tokenizer,
-        json_mode=True,
-        max_new_tokens=256,   # clause matching needs less tokens than 10-field JSON
-    )
-
-    # Retry with proper validation
-    parsed = _safe_json_parse(raw_output)
-    if parsed is None:
-        print("⚠️ Clause matcher first parse failed — retrying...")
-        raw_output = generate(
-            prompt, model, tokenizer,
-            json_mode=True,
-            max_new_tokens=256,
-        )
-        parsed = _safe_json_parse(raw_output)
-
-    print("RAW CLAUSE OUTPUT:", raw_output)
-
-    # --------------------------------------------------
-    # 3️⃣ BUILD ClauseMatchResult
-    # --------------------------------------------------
-    try:
-        if parsed is None:
-            raise ValueError("JSON parse returned None after retry")
-
-        # Fill missing fields with safe defaults
-        for key, default in _CLAUSE_DEFAULTS.items():
-            parsed.setdefault(key, default)
-
-        return ClauseMatchResult(**parsed)
-
-    except Exception as e:
-        print("⚠️ Clause matcher fallback triggered:", e)
-        return ClauseMatchResult(**_CLAUSE_DEFAULTS)
+    def match_with_standards(self, extracted_clauses: Dict) -> Dict:
+        """
+        Enhances extraction with standard comparison flags
+        """
+        for c_type, clause in extracted_clauses.items():
+            clause.normalized_value = self.normalize_value(c_type, clause.value)
+            clause.risk_level = self.get_risk_level(c_type, clause.normalized_value)
+            
+        return extracted_clauses

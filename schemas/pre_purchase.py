@@ -76,6 +76,24 @@ class BrokerRiskAnalysis(BaseModel):
 
 
 # --------------------------------------------------
+# Agent Validation
+# --------------------------------------------------
+
+class AgentClaim(BaseModel):
+    claim: str
+    fact_check: str
+    is_correct: bool
+    citation: Optional[str] = None
+
+class AgentValidation(BaseModel):
+    """Result of comparing agent's claims with policy and IRDAI rules."""
+    is_consistent: bool
+    verified_claims: List[AgentClaim]
+    discrepancies: List[AgentClaim]
+    trust_score: float = Field(ge=0.0, le=100.0)
+
+
+# --------------------------------------------------
 # Final Pre-Purchase Report
 # --------------------------------------------------
 
@@ -89,6 +107,8 @@ class PrePurchaseReport(BaseModel):
     confidence:             ConfidenceLevel
     irdai_compliance:       IRDAICompliance
     broker_risk_analysis:   BrokerRiskAnalysis
+    agent_validation:       Optional[AgentValidation] = None
 
+    regulatory_citations: List[str] = Field(default_factory=list)
     red_flags:      List[str] = Field(default_factory=list)
     positive_flags: List[str] = Field(default_factory=list)

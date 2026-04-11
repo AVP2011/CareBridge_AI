@@ -8,12 +8,7 @@ import re
 from typing import Dict, List, Optional, Tuple
 from pathlib import Path
 
-# PDF Libraries (install these)
-import PyPDF2
-import pdfplumber
-import pytesseract
-from pdf2image import convert_from_path
-from PIL import Image
+# PDF Libraries will be lazy-loaded in methods
 
 # Text cleaning
 import unicodedata
@@ -61,6 +56,7 @@ class RobustPDFExtractor:
         """
         Method 1: pdfplumber (BEST - handles tables, layout)
         """
+        import pdfplumber
         text_parts = []
         
         with pdfplumber.open(pdf_path) as pdf:
@@ -85,6 +81,7 @@ class RobustPDFExtractor:
         """
         Method 2: PyPDF2 (FALLBACK 1 - simple text extraction)
         """
+        import PyPDF2
         text_parts = []
         
         with open(pdf_path, 'rb') as file:
@@ -104,6 +101,8 @@ class RobustPDFExtractor:
         Method 3: OCR (FALLBACK 2 - for scanned PDFs)
         Converts PDF to images, then uses Tesseract OCR
         """
+        import pytesseract
+        from pdf2image import convert_from_path
         print("📸 Using OCR (this may take 1-2 minutes for scanned PDFs)...")
         
         # Convert PDF to images
@@ -128,27 +127,38 @@ class RobustPDFExtractor:
         formatted_rows = []
         
         for row in table:
-            # Filter out None values
-            clean_row = [str(cell) if cell else "" for cell in row]
-            formatted_rows.append(" | ".join(clean_row))
+            # Filter out None values and join with spacers
+            clean_row = [str(cell).strip() if cell else "" for cell in row]
+            # Remove repeated empty cells
+            if any(clean_row):
+                formatted_rows.append(" | ".join(clean_row))
         
         return "\n".join(formatted_rows)
     
     def _clean_text(self, text: str) -> str:
         """
-        Clean extracted text
+        Clean extracted text with focus on preserving clause structure
         """
         # Normalize unicode
         text = unicodedata.normalize('NFKD', text)
         
-        # Remove excessive whitespace
-        text = re.sub(r'\n\s*\n\s*\n+', '\n\n', text)
-        text = re.sub(r' +', ' ', text)
+        # Preserve double newlines for paragraph separation
+        # but remove excess empty lines (3+)
+        text = re.sub(r'[\r\n]{3,}', '\n\n', text)
         
-        # Remove page headers/footers (common patterns)
+        # Remove common PDF artifacts (e.g., weird spacing between letters)
+        # but be careful not to merge intended spaces.
+        # This regex fixes "W a i t i n g   P e r i o d" -> "Waiting Period"
+        text = re.sub(r'(?<=[a-zA-Z])\s(?=[a-zA-Z]\s)', '', text)
+        
+        # Remove page markers
         text = re.sub(r'Page \d+ of \d+', '', text, flags=re.IGNORECASE)
+        text = re.sub(r'--- Page \d+ ---', '', text)
         
-        return text.strip()
+        # Strip trailing/leading whitespace per line
+        lines = [line.strip() for line in text.split('\n')]
+        
+        return "\n".join(lines).strip()
 
 
 # ============================================

@@ -103,7 +103,11 @@ def audit(request: PostRejectionRequest):
 @app.post("/prepurchase")
 def prepurchase(request: PrePurchaseRequest):
     try:
-        result = _engines["pre_purchase"].run(request.policy_text, request.provider_id)
+        result = _engines["pre_purchase"].run(
+            request.policy_text, 
+            request.provider_id, 
+            request.agent_summary
+        )
         return result.model_dump()
     except Exception as e:
         print("⚠️ /prepurchase error:", e)
@@ -138,8 +142,13 @@ def report_chat(request: ReportChatRequest):
 # File Upload Analysis
 # --------------------------------------------------
 
+from fastapi import Form
+
 @app.post("/prepurchase/upload")
-async def prepurchase_upload(file: UploadFile = File(...)):
+async def prepurchase_upload(
+    file: UploadFile = File(...),
+    agent_summary: str = Form(None)
+):
     try:
         content = await file.read()
         extracted_text = ""
@@ -185,7 +194,11 @@ async def prepurchase_upload(file: UploadFile = File(...)):
                 detail="Could not extract sufficient text."
             )
 
-        result = _engines["pre_purchase"].run(extracted_text)
+        result = _engines["pre_purchase"].run(
+            extracted_text, 
+            None, 
+            agent_summary
+        )
         return result.model_dump()
 
     except HTTPException:

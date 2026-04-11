@@ -54,6 +54,20 @@ export interface BrokerRiskAnalysis {
   data_sufficient: boolean;
 }
 
+export interface AgentClaim {
+  claim: string;
+  fact_check: string;
+  is_correct: boolean;
+  citation?: string;
+}
+
+export interface AgentValidation {
+  is_consistent: boolean;
+  verified_claims: AgentClaim[];
+  discrepancies: AgentClaim[];
+  trust_score: number;
+}
+
 export interface PrePurchaseReport {
   clause_risk: ClauseRisk;
   score_breakdown: ScoreBreakdown;
@@ -66,7 +80,9 @@ export interface PrePurchaseReport {
   confidence: ConfidenceLevel;
   irdai_compliance: IRDAICompliance;
   broker_risk_analysis: BrokerRiskAnalysis;
+  agent_validation?: AgentValidation;
 
+  regulatory_citations: string[];
   red_flags: string[];
   positive_flags: string[];
 }

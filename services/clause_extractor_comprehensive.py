@@ -9,6 +9,8 @@ from dataclasses import dataclass
 import json
 
 
+from services.synonyms import get_synonyms
+
 @dataclass
 class ExtractedClause:
     """Represents a single extracted clause"""
@@ -16,12 +18,12 @@ class ExtractedClause:
     value: Any
     confidence: float  # 0.0 to 1.0
     raw_text: str
-    source: str  # 'regex' or 'llm'
+    source: str  # 'regex', 'proximity', or 'llm'
 
 
 class ComprehensiveClauseExtractor:
     """
-    Extracts policy clauses using 40+ regex patterns + LLM fallback
+    Extracts policy clauses using synonym-driven regex + proximity search + LLM fallback
     """
     
     def __init__(self):
@@ -30,11 +32,9 @@ class ComprehensiveClauseExtractor:
     def extract_all_clauses(self, policy_text: str) -> Dict[str, ExtractedClause]:
         """
         Extract all clauses from policy text
-        
-        Returns:
-            Dictionary of clause_type -> ExtractedClause
         """
         clauses = {}
+        text_lower = policy_text.lower()
         
         # Step 1: Extract using regex patterns (fast, accurate)
         for clause_type, patterns in self.patterns.items():
@@ -48,8 +48,64 @@ class ComprehensiveClauseExtractor:
                     source='regex'
                 )
         
+        # Step 2: Proximity Search for missing critical clauses
+        critical_types = ['waiting_period', 'pre_existing_disease', 'co_payment', 'room_rent_limit']
+        for c_type in critical_types:
+            if c_type not in clauses:
+                prox_result = self._extract_with_proximity(text_lower, c_type)
+                if prox_result:
+                    clauses[c_type] = ExtractedClause(
+                        clause_type=c_type,
+                        value=prox_result['value'],
+                        confidence=prox_result['confidence'],
+                        raw_text=prox_result['raw_text'],
+                        source='proximity'
+                    )
+        
         return clauses
-    
+
+    def _extract_with_proximity(self, text: str, clause_type: str) -> Optional[Dict]:
+        """
+        Scan text for clusters of keywords related to a clause type.
+        Used when exact regex patterns fail.
+        """
+        synonyms = get_synonyms(clause_type)
+        if not synonyms:
+            return None
+            
+        # Find all occurrences of any synonym
+        found_indices = []
+        for syn in synonyms:
+            for match in re.finditer(re.escape(syn), text):
+                found_indices.append(match.start())
+        
+        if not found_indices:
+            return None
+            
+        # Common value indicators (numbers, percentages, years)
+        value_indicators = [
+            r'(\d+)\s*%',                # 20%
+            r'(\d+)\s*(?:year|yr|month|mon|day)', # 3 years, 30 days
+            r'(?:rs\.?|inr|₹)\s*([\d,]+)', # ₹5,000
+            r'(?:single|private|deluxe|general)\s*room' # room types
+        ]
+        
+        for idx in found_indices:
+            # Check a window of 200 chars around the synonym
+            window_start = max(0, idx - 50)
+            window_end = min(len(text), idx + 150)
+            window = text[window_start:window_end]
+            
+            for b_pattern in value_indicators:
+                v_match = re.search(b_pattern, window, re.IGNORECASE)
+                if v_match:
+                    return {
+                        'value': v_match.group(0),
+                        'confidence': 0.7, # Lower than direct regex
+                        'raw_text': window.strip()
+                    }
+        return None
+
     def _extract_with_regex(self, text: str, patterns: List[Dict]) -> Optional[Dict]:
         """
         Try multiple regex patterns for a clause type
@@ -63,7 +119,10 @@ class ComprehensiveClauseExtractor:
             for match in matches:
                 # Extract value using custom extractor or default
                 if extractor:
-                    value = extractor(match)
+                    try:
+                        value = extractor(match)
+                    except:
+                        value = match.group(1) if match.groups() else match.group(0)
                 else:
                     value = match.group(1) if match.groups() else match.group(0)
                 
@@ -80,58 +139,42 @@ class ComprehensiveClauseExtractor:
         """
         Build comprehensive regex patterns for all clause types
         """
+        wp_syns = "|".join([re.escape(s) for s in get_synonyms("waiting_period")])
+        ped_syns = "|".join([re.escape(s) for s in get_synonyms("pre_existing_disease")])
+        copay_syns = "|".join([re.escape(s) for s in get_synonyms("co_payment")])
+
         return {
             # ============================================
             # 1. WAITING PERIOD
             # ============================================
             'waiting_period': [
                 {
-                    'pattern': r'waiting\s+period[:\s]+(\d+)\s*(days?|months?|years?)',
+                    'pattern': rf'(?:{wp_syns})[:\s]+(\d+)\s*(days?|months?|years?)',
                     'confidence': 0.95,
                     'extractor': lambda m: f"{m.group(1)} {m.group(2)}"
                 },
                 {
-                    'pattern': r'(?:initial|standard)\s+waiting\s+(?:period\s+)?of\s+(\d+)\s*(days?|months?|years?)',
+                    'pattern': rf'(\d+)\s*(days?|months?|years?)\s+(?:{wp_syns})',
                     'confidence': 0.9
                 },
                 {
-                    'pattern': r'(\d+)\s*(days?|months?|years?)\s+waiting\s+period',
-                    'confidence': 0.9
-                },
-                {
-                    'pattern': r'covered\s+after\s+(\d+)\s*(days?|months?|years?)',
+                    'pattern': rf'covered\s+after\s+(\d+)\s*(days?|months?|years?)',
                     'confidence': 0.85
-                },
-                {
-                    'pattern': r'shall\s+be\s+applicable\s+after\s+(\d+)\s*(days?|months?|years?)',
-                    'confidence': 0.8
                 },
             ],
             
             # ============================================
-            # 2. CO-PAYMENT / CO-PAY
+            # 2. CO-PAYMENT
             # ============================================
             'co_payment': [
                 {
-                    'pattern': r'co-?pay(?:ment)?[:\s]+(\d+)%',
+                    'pattern': rf'(?:{copay_syns})[:\s]+(\d+)%',
                     'confidence': 0.95,
                     'extractor': lambda m: f"{m.group(1)}%"
                 },
                 {
-                    'pattern': r'(?:insured|policyholder|patient)\s+(?:shall|will|must)\s+(?:pay|bear)\s+(\d+)%',
+                    'pattern': rf'(\d+)%\s+(?:{copay_syns})',
                     'confidence': 0.9
-                },
-                {
-                    'pattern': r'(\d+)%\s+(?:of|payable by)\s+(?:insured|policyholder|patient)',
-                    'confidence': 0.9
-                },
-                {
-                    'pattern': r'deductible[:\s]+(\d+)%',
-                    'confidence': 0.85
-                },
-                {
-                    'pattern': r'cost\s+sharing[:\s]+(\d+)%',
-                    'confidence': 0.8
                 },
             ],
             

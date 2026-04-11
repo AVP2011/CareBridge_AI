@@ -1,3 +1,4 @@
+import re
 def extract_structured_features(policy_text: str):
     """
     Extract deterministic insurance policy features
@@ -95,45 +96,55 @@ def extract_structured_features(policy_text: str):
 
     try:
         from services.clause_extractor_comprehensive import ComprehensiveClauseExtractor
+        from services.clause_matcher import ClauseMatcher
+        
         extractor = ComprehensiveClauseExtractor()
+        matcher = ClauseMatcher()
+        
         extracted_clauses = extractor.extract_all_clauses(policy_text)
+        
+        # Normalize and enhance
+        matcher.match_with_standards(extracted_clauses)
 
-        # Map to our override flags
+        # Map to our override flags with stronger logic
         if "waiting_period" in extracted_clauses:
+            clause = extracted_clauses["waiting_period"]
             features["has_waiting_period"] = True
-            val = str(extracted_clauses["waiting_period"].value).lower()
-            if "48" in val or "4 year" in val: features["waiting_period_years"] = 4
-            elif "36" in val or "3 year" in val: features["waiting_period_years"] = 3
-            elif "24" in val or "2 year" in val: features["waiting_period_years"] = 2
-            else: features["waiting_period_years"] = 1
+            features["waiting_period_raw"] = clause.raw_text
+            
+            val = str(clause.normalized_value).lower()
+            nums = re.findall(r'\d+', val)
+            if nums:
+                n = int(nums[0])
+                if "year" in val: features["waiting_period_years"] = n
+                elif "month" in val: features["waiting_period_years"] = n / 12
+                else: features["waiting_period_years"] = n / 365 # days
         
         if "pre_existing_disease" in extracted_clauses:
             features["mentions_pre_existing"] = True
+            features["pre_existing_raw"] = extracted_clauses["pre_existing_disease"].raw_text
         
         if "room_rent_limit" in extracted_clauses:
+            clause = extracted_clauses["room_rent_limit"]
             features["room_rent_cap"] = True
-            val = str(extracted_clauses["room_rent_limit"].value)
+            val = str(clause.normalized_value)
             if "%" in val:
-                try:
-                    pct = int(val.split("%")[0].strip())
-                    features["room_rent_percent"] = pct
-                except:
-                    features["room_rent_percent"] = 1
+                nums = re.findall(r'\d+', val)
+                if nums: features["room_rent_percent"] = int(nums[0])
+            elif "room" in val.lower():
+                features["room_rent_type"] = val
                     
         if "co_payment" in extracted_clauses:
+            clause = extracted_clauses["co_payment"]
             features["co_payment"] = True
-            val = str(extracted_clauses["co_payment"].value)
-            if "%" in val:
-                try:
-                    pct = int(val.split("%")[0].strip())
-                    features["co_payment_percentage"] = pct
-                except:
-                    pass
+            val = str(clause.normalized_value)
+            nums = re.findall(r'\d+', val)
+            if nums: features["co_payment_percentage"] = int(nums[0])
 
-        if "sub_limits" in extracted_clauses:
+        if "sub_limits" in extracted_clauses or "disease_caps" in extracted_clauses:
             features["disease_caps"] = True
 
     except Exception as e:
-        print(f"Warning: ComprehensiveClauseExtractor failed: {e}")
+        print(f"Warning: Phase 1 extraction refinement failed: {e}")
 
     return features

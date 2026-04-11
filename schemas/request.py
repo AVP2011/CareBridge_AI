@@ -12,3 +12,4 @@ class PostRejectionRequest(BaseModel):
 class PrePurchaseRequest(BaseModel):
     policy_text: str = ""
     provider_id: Optional[str] = None
+    agent_summary: Optional[str] = None

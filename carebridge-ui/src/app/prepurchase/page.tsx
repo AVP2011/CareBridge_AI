@@ -51,13 +51,14 @@ export default function PrePurchasePage(): JSX.Element {
   const [loading,    setLoading]    = useState<boolean>(false);
   const [error,      setError]      = useState<string | null>(null);
   const [inputMode,  setInputMode]  = useState<"text" | "file">("text");
+  const [agentSummary, setAgentSummary] = useState<string>("");
+  const [showAllClauses, setShowAllClauses] = useState<boolean>(false);
 
   const handleAnalyze = async () => {
     setError(null); setReport(null);
     if (providerId !== "Other providers") {
-        setLoading(true);
         try {
-            const data = await analyzePolicy("", providerId);
+            const data = await analyzePolicy("", providerId, agentSummary);
             if (data) {
                 setReport(data);
                 setTimeout(() => window.scrollTo({ top: 680, behavior: "smooth" }), 120);
@@ -72,10 +73,10 @@ export default function PrePurchasePage(): JSX.Element {
     setLoading(true);
     try {
       const data = file
-        ? await analyzePolicyFromFile(file)
+        ? await analyzePolicyFromFile(file, agentSummary)
         : policyText.trim().length < 100
           ? (() => { setError("Policy text must be at least 100 characters."); setLoading(false); return null; })()
-          : await analyzePolicy(policyText);
+          : await analyzePolicy(policyText, undefined, agentSummary);
       if (data) {
         setReport(data);
         setTimeout(() => window.scrollTo({ top: 680, behavior: "smooth" }), 120);
@@ -630,6 +631,16 @@ export default function PrePurchasePage(): JSX.Element {
                     </div>
                 </div>
             )}
+
+            <div style={{ padding: "0 28px 20px" }}>
+                <label style={{ fontFamily: "DM Mono", fontSize: 10, fontWeight: 500, letterSpacing: "0.14em", textTransform: "uppercase", color: "var(--mist2)", display: "block", marginBottom: 8 }}>Agent's Summary / Promises (Optional)</label>
+                <textarea 
+                    placeholder="Enter what your agent told you... e.g. 'No waiting period', 'Covers everything from day 1', etc."
+                    value={agentSummary}
+                    onChange={e => setAgentSummary(e.target.value)}
+                    style={{ height: "80px", marginBottom: "0" }}
+                />
+            </div>
               <div style={{ padding: "0 28px 28px" }}>
                   <button className="analyze-btn" onClick={handleAnalyze} disabled={loading} style={{ marginTop: 0 }}>
                     {loading ? <><span className="spinner" />Analysing policy...</> : "Run Policy Analysis"}
@@ -681,6 +692,23 @@ export default function PrePurchasePage(): JSX.Element {
                   </div>
                 )}
 
+                <div className="rcard" style={{ border: report.score_breakdown.adjusted_score >= 80 ? "1px solid #9dd0aa" : report.score_breakdown.adjusted_score >= 55 ? "1px solid #e0b870" : "1px solid #e08070", background: "white", marginBottom: "20px" }}>
+                  <div className="rcard-body" style={{ padding: "32px", textAlign: "center" }}>
+                    <div className="page-eyebrow" style={{ justifyContent: "center", marginBottom: "16px" }}>Final Verdict</div>
+                    <h2 className="page-title" style={{ fontSize: "42px", marginBottom: "12px", color: scoreColor(report.score_breakdown.adjusted_score) }}>
+                      {report.score_breakdown.adjusted_score >= 80 ? "Proceed with Confidence" : 
+                       report.score_breakdown.adjusted_score >= 55 ? "Proceed with Caution" : "Avoid or Re-negotiate"}
+                    </h2>
+                    <p style={{ fontSize: "16px", color: "var(--mist)", maxWidth: "600px", margin: "0 auto 24px" }}>
+                      {report.summary}
+                    </p>
+                    <div style={{ display: "flex", justifyContent: "center", gap: "12px" }}>
+                      <span className="conf-chip" style={{ background: "var(--paper)", color: "var(--sage)", fontSize: "11px" }}>Confidence: {report.confidence}</span>
+                      <span className="conf-chip" style={{ background: "var(--paper)", color: "var(--gold)", fontSize: "11px" }}>Compliance: {report.irdai_compliance.compliance_rating}</span>
+                    </div>
+                  </div>
+                </div>
+
                 <ReportChat reportData={report} context="prepurchase" />
 
                 <div className="rcard">
@@ -724,6 +752,8 @@ export default function PrePurchasePage(): JSX.Element {
                   </div>
                 </div>
 
+
+
                 <div className="rcard">
                   <div className="rcard-hdr">
                     <span className="rcard-title">Clause Risk Assessment</span>
@@ -746,7 +776,9 @@ export default function PrePurchasePage(): JSX.Element {
                     );
                   })()}
                   <div className="clause-grid">
-                    {Object.entries(report.clause_risk).map(([key, value]) => {
+                    {Object.entries(report.clause_risk)
+                      .slice(0, showAllClauses ? undefined : 4)
+                      .map(([key, value]) => {
                       const cfg  = RISK[value] || RISK["Not Found"];
                       const meta = CLAUSE_META[key];
                       return (
@@ -762,6 +794,14 @@ export default function PrePurchasePage(): JSX.Element {
                       );
                     })}
                   </div>
+                  {Object.keys(report.clause_risk).length > 4 && (
+                    <button 
+                      onClick={() => setShowAllClauses(!showAllClauses)}
+                      style={{ width: "100%", padding: "12px", background: "#f5f0e8", border: "none", borderTop: "1px solid #eee8e0", fontFamily: "DM Mono", fontSize: "10px", color: "var(--mist)", cursor: "pointer", textTransform: "uppercase", letterSpacing: "0.1em" }}
+                    >
+                      {showAllClauses ? "↑ Show Fewer Clauses" : "↓ Show All 10 Clauses"}
+                    </button>
+                  )}
                 </div>
 
                 <div className="rcard">
@@ -794,6 +834,49 @@ export default function PrePurchasePage(): JSX.Element {
                     </div>
                   </div>
                 </div>
+                
+                {report.agent_validation && (
+                  <div className="rcard">
+                    <div className="rcard-hdr">
+                      <span className="rcard-title">Verification Report</span>
+                      <span className="rcard-title" style={{ color: report.agent_validation.trust_score < 70 ? "#8c1f14" : "#1e5c2e" }}>
+                        Trust Score: {Math.round(report.agent_validation.trust_score)}%
+                      </span>
+                    </div>
+                    <div className="rcard-body" style={{ padding: 0 }}>
+                      <div style={{ padding: "18px 26px", borderBottom: "1px solid #eee8e0", fontSize: "13.5px", lineHeight: "1.7", color: "var(--ink2)" }}>
+                        {report.agent_validation.is_consistent 
+                          ? "The agent's summary is largely consistent with the policy wording and IRDAI regulations."
+                          : "Multiple discrepancies found between the agent's claims and the actual policy clauses."}
+                      </div>
+                      
+                      {report.agent_validation.discrepancies.length > 0 && (
+                        <div style={{ background: "#fff5f5" }}>
+                          <div style={{ padding: "10px 26px", fontSize: "9px", fontFamily: "DM Mono", textTransform: "uppercase", letterSpacing: "0.14em", color: "#8c1f14", borderBottom: "1px solid #f5d0cc", opacity: 0.7 }}>Discrepancy Analysis</div>
+                          {report.agent_validation.discrepancies.map((c, i) => (
+                            <div key={i} style={{ padding: "20px 26px", borderBottom: "1px solid #f5d0cc" }}>
+                              <div style={{ fontSize: "14px", fontWeight: 600, color: "#8c1f14", marginBottom: "6px" }}>Claim: "{c.claim}"</div>
+                              <div style={{ fontSize: "13px", color: "#5a1a14", lineHeight: "1.6" }}><b>Fact:</b> {c.fact_check}</div>
+                              {c.citation && <div style={{ fontSize: "10px", marginTop: "10px", color: "#8c1f14", opacity: 0.6, fontFamily: "DM Mono", textTransform: "uppercase" }}>Ref: {c.citation}</div>}
+                            </div>
+                          ))}
+                        </div>
+                      )}
+
+                      {report.agent_validation.verified_claims.length > 0 && (
+                        <div style={{ background: "#f8fbf9" }}>
+                          <div style={{ padding: "10px 26px", fontSize: "9px", fontFamily: "DM Mono", textTransform: "uppercase", letterSpacing: "0.14em", color: "var(--sage)", borderBottom: "1px solid #d6eddc", opacity: 0.7 }}>Verified Assertions</div>
+                          {report.agent_validation.verified_claims.map((c, i) => (
+                            <div key={i} style={{ padding: "20px 26px", borderBottom: "1px solid #d6eddc" }}>
+                              <div style={{ fontSize: "14px", fontWeight: 600, color: "var(--sage)", marginBottom: "6px" }}>Claim: "{c.claim}"</div>
+                              <div style={{ fontSize: "13px", color: "#1a4a26", lineHeight: "1.6" }}><b>Verification:</b> {c.fact_check}</div>
+                            </div>
+                          ))}
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                )}
 
                 {(report.red_flags.length > 0 || report.positive_flags.length > 0) && (
                   <div className="rcard">
@@ -810,6 +893,23 @@ export default function PrePurchasePage(): JSX.Element {
                       {report.positive_flags.map((f, i) => (
                         <div key={`p${i}`} className="flag-item">
                           <span className="flag-icon" style={{ color: "#1e5c2e" }}>◆</span>{f}
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
+                {report.regulatory_citations && report.regulatory_citations.length > 0 && (
+                  <div className="rcard" style={{ borderStyle: "dashed" }}>
+                    <div className="rcard-hdr" style={{ background: "transparent" }}>
+                      <span className="rcard-title">Regulatory References</span>
+                      <span className="rcard-title">IRDAI GUIDELINES</span>
+                    </div>
+                    <div className="rcard-body">
+                      {report.regulatory_citations.map((cite, idx) => (
+                        <div key={idx} style={{ display: "flex", gap: "12px", marginBottom: idx === report.regulatory_citations.length - 1 ? 0 : "12px", fontSize: "12px", color: "var(--mist)", lineHeight: "1.5" }}>
+                          <span style={{ color: "var(--sage2)", fontWeight: "600" }}>§</span>
+                          {cite}
                         </div>
                       ))}
                     </div>

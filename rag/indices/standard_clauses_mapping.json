@@ -1,0 +1,443 @@
+[
+    {
+        "text": "Pre-Existing Disease Waiting Period: Expenses related to pre-existing diseases are excluded until completion of 36 months of continuous coverage from policy start date.",
+        "metadata": {
+            "insurer": "Niva Bupa",
+            "policy": "RISE",
+            "category": "Pre-existing Condition",
+            "title": "Pre-Existing Disease Waiting Period"
+        }
+    },
+    {
+        "text": "Specific Disease Waiting Period: Certain listed medical conditions are excluded until completion of 24 months from policy start date.",
+        "metadata": {
+            "insurer": "Niva Bupa",
+            "policy": "RISE",
+            "category": "Specific Condition Waiting Period",
+            "title": "Specific Disease Waiting Period"
+        }
+    },
+    {
+        "text": "Initial 30-Day Waiting Period: Any illness occurring within 30 days from policy start date is excluded, except in case of accident.",
+        "metadata": {
+            "insurer": "Niva Bupa",
+            "policy": "RISE",
+            "category": "Initial Waiting Period",
+            "title": "Initial 30-Day Waiting Period"
+        }
+    },
+    {
+        "text": "Investigation-Only Admission: Hospitalization solely for diagnostic or investigative purposes without active line of treatment is excluded.",
+        "metadata": {
+            "insurer": "Niva Bupa",
+            "policy": "RISE",
+            "category": "Diagnostic-Only Hospitalization",
+            "title": "Investigation-Only Admission"
+        }
+    },
+    {
+        "text": "Cosmetic / Aesthetic Treatment Exclusion: Cosmetic or aesthetic treatments are excluded unless medically necessary due to illness or injury.",
+        "metadata": {
+            "insurer": "Niva Bupa",
+            "policy": "RISE",
+            "category": "Cosmetic Exclusion",
+            "title": "Cosmetic / Aesthetic Treatment Exclusion"
+        }
+    },
+    {
+        "text": "Medical Necessity / Reasonable & Customary Charges: Claims may be rejected if treatment is not medically necessary or if charges are not reasonable and customary.",
+        "metadata": {
+            "insurer": "Niva Bupa",
+            "policy": "RISE",
+            "category": "Medical Necessity",
+            "title": "Medical Necessity / Reasonable & Customary Charges"
+        }
+    },
+    {
+        "text": "Self-Inflicted Injury Exclusion: Treatment arising from intentional self-inflicted injury is excluded.",
+        "metadata": {
+            "insurer": "Niva Bupa",
+            "policy": "RISE",
+            "category": "Intentional Injury",
+            "title": "Self-Inflicted Injury Exclusion"
+        }
+    },
+    {
+        "text": "Substance Abuse Exclusion: Treatment related to alcohol or substance abuse is excluded under policy terms.",
+        "metadata": {
+            "insurer": "Niva Bupa",
+            "policy": "RISE",
+            "category": "Alcohol / Drug Related",
+            "title": "Substance Abuse Exclusion"
+        }
+    },
+    {
+        "text": "Pre-Existing Disease Waiting Period: Pre-existing diseases are covered only after 36 months of continuous coverage from policy inception.",
+        "metadata": {
+            "insurer": "Star Health",
+            "policy": "Comprehensive Health Insurance",
+            "category": "Pre-existing Condition",
+            "title": "Pre-Existing Disease Waiting Period"
+        }
+    },
+    {
+        "text": "Specific Disease Waiting Period: Certain listed conditions are covered only after 24 months from the policy start date.",
+        "metadata": {
+            "insurer": "Star Health",
+            "policy": "Comprehensive Health Insurance",
+            "category": "Specific Condition Waiting Period",
+            "title": "Specific Disease Waiting Period"
+        }
+    },
+    {
+        "text": "Initial Waiting Period: Any illness occurring within the first 30 days of policy commencement is not covered, except for accidents.",
+        "metadata": {
+            "insurer": "Star Health",
+            "policy": "Comprehensive Health Insurance",
+            "category": "Initial Waiting Period",
+            "title": "Initial Waiting Period"
+        }
+    },
+    {
+        "text": "Medical Necessity Requirement: Hospitalization must be medically necessary. Claims may be denied if treatment is not clinically justified or charges are excessive.",
+        "metadata": {
+            "insurer": "Star Health",
+            "policy": "Comprehensive Health Insurance",
+            "category": "Medical Necessity",
+            "title": "Medical Necessity Requirement"
+        }
+    },
+    {
+        "text": "Diagnostic-Only Hospitalization: Hospitalization solely for diagnostic purposes without active line of treatment is excluded.",
+        "metadata": {
+            "insurer": "Star Health",
+            "policy": "Comprehensive Health Insurance",
+            "category": "Diagnostic Admission",
+            "title": "Diagnostic-Only Hospitalization"
+        }
+    },
+    {
+        "text": "Substance Abuse Exclusion: Claims arising due to alcohol or substance abuse are excluded under the policy.",
+        "metadata": {
+            "insurer": "Star Health",
+            "policy": "Comprehensive Health Insurance",
+            "category": "Alcohol / Drug Related",
+            "title": "Substance Abuse Exclusion"
+        }
+    },
+    {
+        "text": "Self-Inflicted Injury Exclusion: Hospitalization due to intentional self-inflicted injury is excluded.",
+        "metadata": {
+            "insurer": "Star Health",
+            "policy": "Comprehensive Health Insurance",
+            "category": "Intentional Injury",
+            "title": "Self-Inflicted Injury Exclusion"
+        }
+    },
+    {
+        "text": "Cosmetic / Aesthetic Procedure Exclusion: Cosmetic or aesthetic procedures are excluded unless medically necessary due to illness or injury.",
+        "metadata": {
+            "insurer": "Star Health",
+            "policy": "Comprehensive Health Insurance",
+            "category": "Cosmetic Exclusion",
+            "title": "Cosmetic / Aesthetic Procedure Exclusion"
+        }
+    },
+    {
+        "text": "30 Day Initial Waiting Period: ",
+        "metadata": {
+            "insurer": "Aditya Birla Health Insurance",
+            "policy": "Standard Plan",
+            "category": "Waiting Period",
+            "title": "30 Day Initial Waiting Period"
+        }
+    },
+    {
+        "text": "24 Month Specific Disease Waiting Period: ",
+        "metadata": {
+            "insurer": "Aditya Birla Health Insurance",
+            "policy": "Standard Plan",
+            "category": "Waiting Period",
+            "title": "24 Month Specific Disease Waiting Period"
+        }
+    },
+    {
+        "text": "Pre-Existing Disease Waiting Period: ",
+        "metadata": {
+            "insurer": "Aditya Birla Health Insurance",
+            "policy": "Standard Plan",
+            "category": "Pre-Existing Disease",
+            "title": "Pre-Existing Disease Waiting Period"
+        }
+    },
+    {
+        "text": "Genetic Disorder Waiting Period: ",
+        "metadata": {
+            "insurer": "Aditya Birla Health Insurance",
+            "policy": "Standard Plan",
+            "category": "Waiting Period",
+            "title": "Genetic Disorder Waiting Period"
+        }
+    },
+    {
+        "text": "Cosmetic and Aesthetic Procedures: ",
+        "metadata": {
+            "insurer": "Aditya Birla Health Insurance",
+            "policy": "Standard Plan",
+            "category": "Permanent Exclusion",
+            "title": "Cosmetic and Aesthetic Procedures"
+        }
+    },
+    {
+        "text": "Non-Medical Consumables: ",
+        "metadata": {
+            "insurer": "Aditya Birla Health Insurance",
+            "policy": "Standard Plan",
+            "category": "Non-Medical Expense",
+            "title": "Non-Medical Consumables"
+        }
+    },
+    {
+        "text": "Room Rent Proportionate Deduction: ",
+        "metadata": {
+            "insurer": "Aditya Birla Health Insurance",
+            "policy": "Standard Plan",
+            "category": "Financial Condition",
+            "title": "Room Rent Proportionate Deduction"
+        }
+    },
+    {
+        "text": "30 Day Initial Waiting Period: ",
+        "metadata": {
+            "insurer": "HDFC ERGO",
+            "policy": "Standard Plan",
+            "category": "Waiting Period",
+            "title": "30 Day Initial Waiting Period"
+        }
+    },
+    {
+        "text": "Pre-Existing Disease Waiting Period: ",
+        "metadata": {
+            "insurer": "HDFC ERGO",
+            "policy": "Standard Plan",
+            "category": "Pre-Existing Disease",
+            "title": "Pre-Existing Disease Waiting Period"
+        }
+    },
+    {
+        "text": "Specific Disease Waiting Period: ",
+        "metadata": {
+            "insurer": "HDFC ERGO",
+            "policy": "Standard Plan",
+            "category": "Waiting Period",
+            "title": "Specific Disease Waiting Period"
+        }
+    },
+    {
+        "text": "Medical Necessity Clause: ",
+        "metadata": {
+            "insurer": "HDFC ERGO",
+            "policy": "Standard Plan",
+            "category": "Medical Necessity",
+            "title": "Medical Necessity Clause"
+        }
+    },
+    {
+        "text": "Hospitalization for Investigation Only: ",
+        "metadata": {
+            "insurer": "HDFC ERGO",
+            "policy": "Standard Plan",
+            "category": "Diagnostic Admission",
+            "title": "Hospitalization for Investigation Only"
+        }
+    },
+    {
+        "text": "Cosmetic / Aesthetic Treatment: ",
+        "metadata": {
+            "insurer": "HDFC ERGO",
+            "policy": "Standard Plan",
+            "category": "Permanent Exclusion",
+            "title": "Cosmetic / Aesthetic Treatment"
+        }
+    },
+    {
+        "text": "Non-Medical Consumables: ",
+        "metadata": {
+            "insurer": "HDFC ERGO",
+            "policy": "Standard Plan",
+            "category": "Non-Medical Expense",
+            "title": "Non-Medical Consumables"
+        }
+    },
+    {
+        "text": "Room Rent Limit & Proportionate Deduction: ",
+        "metadata": {
+            "insurer": "HDFC ERGO",
+            "policy": "Standard Plan",
+            "category": "Financial Condition",
+            "title": "Room Rent Limit & Proportionate Deduction"
+        }
+    },
+    {
+        "text": "Pre-Existing Disease Waiting Period: Expenses related to treatment of pre-existing diseases and their direct complications are excluded until 24 months of continuous coverage.",
+        "metadata": {
+            "insurer": "ICICI Lombard",
+            "policy": "Standard Plan",
+            "category": null,
+            "title": "Pre-Existing Disease Waiting Period"
+        }
+    },
+    {
+        "text": "30-Day Initial Waiting Period: ",
+        "metadata": {
+            "insurer": "ICICI Lombard",
+            "policy": "Standard Plan",
+            "category": null,
+            "title": "30-Day Initial Waiting Period"
+        }
+    },
+    {
+        "text": "Specified Disease Waiting Period: ",
+        "metadata": {
+            "insurer": "ICICI Lombard",
+            "policy": "Standard Plan",
+            "category": null,
+            "title": "Specified Disease Waiting Period"
+        }
+    },
+    {
+        "text": "Investigation & Evaluation Only: ",
+        "metadata": {
+            "insurer": "ICICI Lombard",
+            "policy": "Standard Plan",
+            "category": null,
+            "title": "Investigation & Evaluation Only"
+        }
+    },
+    {
+        "text": "Cosmetic or Plastic Surgery: ",
+        "metadata": {
+            "insurer": "ICICI Lombard",
+            "policy": "Standard Plan",
+            "category": null,
+            "title": "Cosmetic or Plastic Surgery"
+        }
+    },
+    {
+        "text": "Non-Payable Items (IRDAI List): ",
+        "metadata": {
+            "insurer": "ICICI Lombard",
+            "policy": "Standard Plan",
+            "category": null,
+            "title": "Non-Payable Items (IRDAI List)"
+        }
+    },
+    {
+        "text": "Pre-Existing Disease Waiting Period: ",
+        "metadata": {
+            "insurer": "Care Health Insurance",
+            "policy": "Care",
+            "category": "Pre-existing Condition",
+            "title": "Pre-Existing Disease Waiting Period"
+        }
+    },
+    {
+        "text": "Specific Disease Waiting Period: ",
+        "metadata": {
+            "insurer": "Care Health Insurance",
+            "policy": "Care",
+            "category": "Specific Condition Waiting Period",
+            "title": "Specific Disease Waiting Period"
+        }
+    },
+    {
+        "text": "Initial 30-Day Waiting Period: ",
+        "metadata": {
+            "insurer": "Care Health Insurance",
+            "policy": "Care",
+            "category": "Initial Waiting Period",
+            "title": "Initial 30-Day Waiting Period"
+        }
+    },
+    {
+        "text": "Medical Necessity & Reasonable Charges: ",
+        "metadata": {
+            "insurer": "Care Health Insurance",
+            "policy": "Care",
+            "category": "Medical Necessity",
+            "title": "Medical Necessity & Reasonable Charges"
+        }
+    },
+    {
+        "text": "Investigation-Only Admission: ",
+        "metadata": {
+            "insurer": "Care Health Insurance",
+            "policy": "Care",
+            "category": "Diagnostic-Only Hospitalization",
+            "title": "Investigation-Only Admission"
+        }
+    },
+    {
+        "text": "Initial 30-Day Waiting Period: ",
+        "metadata": {
+            "insurer": "Reliance General Insurance",
+            "policy": "Health Gain",
+            "category": "Initial Waiting Period",
+            "title": "Initial 30-Day Waiting Period"
+        }
+    },
+    {
+        "text": "Pre-Existing Disease Waiting Period: ",
+        "metadata": {
+            "insurer": "Reliance General Insurance",
+            "policy": "Health Gain",
+            "category": "Pre-existing Condition",
+            "title": "Pre-Existing Disease Waiting Period"
+        }
+    },
+    {
+        "text": "Specific Disease Waiting Period: ",
+        "metadata": {
+            "insurer": "Reliance General Insurance",
+            "policy": "Health Gain",
+            "category": "Specific Condition Waiting Period",
+            "title": "Specific Disease Waiting Period"
+        }
+    },
+    {
+        "text": "Investigation / Evaluation Only Admission: ",
+        "metadata": {
+            "insurer": "Reliance General Insurance",
+            "policy": "Health Gain",
+            "category": "Diagnostic-Only Hospitalization",
+            "title": "Investigation / Evaluation Only Admission"
+        }
+    },
+    {
+        "text": "Medical Necessity & Reasonable Charges: ",
+        "metadata": {
+            "insurer": "Reliance General Insurance",
+            "policy": "Health Gain",
+            "category": "Medical Necessity",
+            "title": "Medical Necessity & Reasonable Charges"
+        }
+    },
+    {
+        "text": "Cosmetic / Aesthetic Treatment Exclusion: ",
+        "metadata": {
+            "insurer": "Reliance General Insurance",
+            "policy": "Health Gain",
+            "category": "Permanent Exclusion",
+            "title": "Cosmetic / Aesthetic Treatment Exclusion"
+        }
+    },
+    {
+        "text": "Non-Payable Items: ",
+        "metadata": {
+            "insurer": "Reliance General Insurance",
+            "policy": "Health Gain",
+            "category": "Non-Medical Expense",
+            "title": "Non-Payable Items"
+        }
+    }
+]

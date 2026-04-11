@@ -1,5 +1,7 @@
 import json
 import re
+import os
+from pathlib import Path
 
 from services.prepurchase_rule_engine import extract_structured_features
 from llm.prepurchase_prompt import prepurchase_risk_prompt
@@ -9,12 +11,16 @@ from services.irdai_compliance_engine import evaluate_irdai_compliance
 from services.broker_risk_engine import analyze_broker_risk
 from services.known_providers_db import get_pre_extracted_clause_risk, get_pre_extracted_summary
 
+from rag.retrievers import IRDAIRetriever, StandardClauseRetriever
+
 from schemas.pre_purchase import (
     ClauseRiskAssessment,
     PrePurchaseReport,
     IRDAICompliance,
     PolicyScoreBreakdown,
     BrokerRiskAnalysis,
+    AgentValidation,
+    AgentClaim,
 )
 
 _NOT_FOUND_DEFAULTS = {
@@ -55,13 +61,7 @@ def _safe_json_parse(raw: str) -> dict | None:
 def _apply_deterministic_overrides(clause_risk: ClauseRiskAssessment, features: dict) -> None:
     """
     Apply rule-based overrides to clause_risk IN PLACE.
-
-    IMPORTANT: These overrides run BEFORE the LLM result is finalised.
-    This means even if the LLM returns "Not Found" for a clause that is
-    clearly present in the policy text via keyword detection, the
-    deterministic engine will correct it.
-
-    Bidirectional: sets both high AND low risk based on detected values.
+    Corrects LLM 'Not Found' errors using high-confidence regex patterns.
     """
 
     # ── Waiting Period ──────────────────────────────────────
@@ -74,10 +74,8 @@ def _apply_deterministic_overrides(clause_risk: ClauseRiskAssessment, features: 
         clause_risk.waiting_period = "Moderate Risk"
     elif wait == 1:
         clause_risk.waiting_period = "Low Risk"
-    elif features.get("has_waiting_period"):
-        # Keyword present but duration not parsed → Moderate as safe default
-        if clause_risk.waiting_period == "Not Found":
-            clause_risk.waiting_period = "Moderate Risk"
+    elif features.get("has_waiting_period") and clause_risk.waiting_period == "Not Found":
+        clause_risk.waiting_period = "Moderate Risk"
 
     # ── Co-payment ──────────────────────────────────────────
     co_pay = features.get("co_payment_percentage", 0)
@@ -88,7 +86,6 @@ def _apply_deterministic_overrides(clause_risk: ClauseRiskAssessment, features: 
     elif 0 < co_pay < 10:
         clause_risk.co_payment = "Low Risk"
     elif features.get("co_payment") and clause_risk.co_payment == "Not Found":
-        # Keyword present but percentage not parsed
         clause_risk.co_payment = "Moderate Risk"
 
     # ── Room Rent Sublimit ──────────────────────────────────
@@ -107,14 +104,15 @@ def _apply_deterministic_overrides(clause_risk: ClauseRiskAssessment, features: 
         clause_risk.pre_existing_disease = "Moderate Risk"
 
     # ── Disease Caps / Sublimits ────────────────────────────
-    if features.get("disease_caps") and clause_risk.disease_specific_caps == "Not Found":
-        clause_risk.disease_specific_caps = "Moderate Risk"
-    if features.get("disease_caps") and clause_risk.sublimits_and_caps == "Not Found":
-        clause_risk.sublimits_and_caps = "Moderate Risk"
+    if features.get("disease_caps"):
+        if clause_risk.disease_specific_caps == "Not Found":
+            clause_risk.disease_specific_caps = "Moderate Risk"
+        if clause_risk.sublimits_and_caps == "Not Found":
+            clause_risk.sublimits_and_caps = "Moderate Risk"
 
     # ── Restoration Benefit ─────────────────────────────────
     if features.get("restoration_benefit") and clause_risk.restoration_benefit == "Not Found":
-        clause_risk.restoration_benefit = "Low Risk"   # present = good = Low Risk
+        clause_risk.restoration_benefit = "Low Risk"
 
     # ── Claim Procedure Complexity ──────────────────────────
     if features.get("procedural_conditions") and clause_risk.claim_procedure_complexity == "Not Found":
@@ -125,7 +123,6 @@ def _apply_deterministic_overrides(clause_risk: ClauseRiskAssessment, features: 
         clause_risk.exclusions_clarity = "High Risk"
 
     # ── Transparency ────────────────────────────────────────
-    # If multiple compliance markers are present, terms are transparent
     compliance_signals = sum([
         features.get("free_look_period", False),
         features.get("grievance_redressal", False),
@@ -142,237 +139,155 @@ class PrePurchaseEngine:
     def __init__(self, model, tokenizer):
         self.model = model
         self.tokenizer = tokenizer
+        
+        # Initialize RAG Components
+        rag_dir = os.path.join(Path(__file__).parent.parent, "rag", "indices")
+        try:
+            self.irdai_retriever = IRDAIRetriever(rag_dir)
+            self.standard_retriever = StandardClauseRetriever(rag_dir)
+            print("✅ PrePurchaseEngine: Retrievers active.")
+        except Exception as e:
+            print(f"⚠ PrePurchaseEngine: RAG init skipped ({e}).")
+            self.irdai_retriever = None
+            self.standard_retriever = None
 
-    def run(self, policy_text: str, provider_id: str = None) -> PrePurchaseReport:
+    def run(self, policy_text: str, provider_id: str = None, agent_summary: str = None) -> PrePurchaseReport:
+        # ─────────────────────────────────────────────────────
+        # 1️⃣ RAG Data Gathering
+        # ─────────────────────────────────────────────────────
+        irdai_context = ""
+        market_context = ""
+        
+        if self.irdai_retriever:
+            all_irdai = []
+            queries = ["waiting periods", "standard exclusions", "agent conduct circular"]
+            for q in queries:
+                all_irdai.extend(self.irdai_retriever.retrieve(q, k=2))
+            
+            irdai_snippets = []
+            seen = set()
+            for r in all_irdai:
+                if r['text'][:50] not in seen:
+                    irdai_snippets.append(f"[{r['source']}]: {r['text']}")
+                    seen.add(r['text'][:50])
+            irdai_context = "\n\n".join(irdai_snippets[:5])
+
+        if self.standard_retriever:
+            market_results = self.standard_retriever.retrieve(policy_text[:500], k=3)
+            market_context = "\n\n".join([f"[{r['metadata']['insurer']}]: {r['text']}" for r in market_results])
 
         # ─────────────────────────────────────────────────────
-        # 0️⃣ Known Provider Fast-Path
+        # 2️⃣ CLEAN & SCAN
         # ─────────────────────────────────────────────────────
-        if provider_id:
-            pre_extracted = get_pre_extracted_clause_risk(provider_id)
-            if pre_extracted:
-                print(f"✅ Found known provider {provider_id}, using pre-extracted clauses.")
-                clause_risk = ClauseRiskAssessment(**pre_extracted)
-                confidence = "High"
-                summary = get_pre_extracted_summary(provider_id)
-                # Mock a basic IRDAI compliance just for scoring since we didn't run the IRDAI engine on the full text
-                # We assume top-tier providers have decent compliance for scoring out of the box
-                compliance_dict = {"compliance_score": 5.0, "compliance_rating": "Moderate Compliance", "compliance_flags": {}}
-                
-                # Jump straight to structural risk and scoring
-                broker_risk_analysis = BrokerRiskAnalysis(
-                    **analyze_broker_risk(
-                        clause_risk=clause_risk,
-                        compliance_data=compliance_dict,
-                    )
-                )
-
-                score_data = compute_policy_score(clause_risk, compliance_dict) or {}
-                score = float(score_data.get("adjusted_score", 50))
-
-                if broker_risk_analysis.structural_risk_level == "High":
-                    score -= 10
-                elif broker_risk_analysis.structural_risk_level == "Elevated":
-                    score -= 5
-
-                if broker_risk_analysis.transparency_score >= 70:
-                    score += 5
-
-                score = max(0.0, min(score, 100.0))
-                rating = "Strong" if score >= 80 else "Moderate" if score >= 55 else "Weak"
-
-                score_breakdown = PolicyScoreBreakdown(
-                    base_score=score_data.get("base_score", score),
-                    adjusted_score=score,
-                    rating=rating,
-                    risk_index=score_data.get("risk_index", score),
-                )
-
-                checklist = [
-                    "Ask about waiting period duration clearly.",
-                    "Confirm pre-existing disease coverage timeline.",
-                    "Check if room rent has caps.",
-                    "Verify disease-specific sublimits.",
-                    "Confirm co-payment percentage.",
-                    "Clarify exclusions before purchase.",
-                    "Verify restoration benefit applicability.",
-                    "Check claim procedure complexity and deadlines.",
-                ]
-
-                return PrePurchaseReport(
-                    clause_risk=clause_risk,
-                    score_breakdown=score_breakdown,
-                    overall_policy_rating=rating,
-                    summary=summary,
-                    checklist_for_buyer=checklist,
-                    confidence=confidence,
-                    red_flags=score_data.get("red_flags", []),
-                    positive_flags=score_data.get("positive_flags", []),
-                    irdai_compliance=IRDAICompliance(**compliance_dict),
-                    broker_risk_analysis=broker_risk_analysis,
-                )
+        policy_text_clean = re.sub(r"\s+", " ", policy_text).strip()[:8000]
+        features = extract_structured_features(policy_text_clean)
 
         # ─────────────────────────────────────────────────────
-        # 🔒 CLEAN INPUT (Fallback for Unknown Providers)
+        # 3️⃣ HYBRID GENERATION
         # ─────────────────────────────────────────────────────
-        policy_text = re.sub(r"\s+", " ", policy_text).strip()
-        policy_text = policy_text[:8000] # Increased allowed text length
-
-        # ─────────────────────────────────────────────────────
-        # 1️⃣ Deterministic Feature Extraction
-        # ─────────────────────────────────────────────────────
-        features = extract_structured_features(policy_text)
-        print(f"🔍 Features extracted: {features}")
-
-        # ─────────────────────────────────────────────────────
-        # 2️⃣ LLM Clause Risk Classification
-        # ─────────────────────────────────────────────────────
-        prompt = prepurchase_risk_prompt(policy_text)
-
-        raw_output = generate(
-            prompt,
-            self.model,
-            self.tokenizer,
-            json_mode=True,
-            max_new_tokens=400,
+        prompt = prepurchase_risk_prompt(
+            policy_text=policy_text_clean,
+            irdai_context=irdai_context,
+            market_standards=market_context,
+            agent_summary=agent_summary
         )
 
-        if not raw_output or raw_output.strip() in ("{}", ""):
-            print("⚠ LLM returned empty output — retrying...")
-            raw_output = generate(
-                prompt,
-                self.model,
-                self.tokenizer,
-                json_mode=True,
-                max_new_tokens=400,
-            )
-
+        raw_output = generate(prompt, self.model, self.tokenizer, json_mode=True, max_new_tokens=1000)
         parsed = _safe_json_parse(raw_output)
 
-        if parsed is None:
-            print("⚠ JSON parse failed after retry — using deterministic fallback only")
-
-        print("RAW PREPURCHASE LLM OUTPUT:", raw_output[:300] if raw_output else "EMPTY")
-
         # ─────────────────────────────────────────────────────
-        # 3️⃣ Build ClauseRiskAssessment from LLM output
+        # 4️⃣ STRUCTURE & OVERRIDE
         # ─────────────────────────────────────────────────────
-        try:
-            if parsed is None:
-                raise ValueError("LLM output invalid")
-
-            # Normalise any stray values the LLM may have used
-            _VALID = {"High Risk", "Moderate Risk", "Low Risk", "Not Found"}
-            for key in _NOT_FOUND_DEFAULTS:
-                val = parsed.get(key, "Not Found")
-                parsed[key] = val if val in _VALID else "Not Found"
-
-            # Fill any missing keys with defaults
-            for key, default in _NOT_FOUND_DEFAULTS.items():
-                parsed.setdefault(key, default)
-
-            clause_risk = ClauseRiskAssessment(**parsed)
-            print(f"✅ LLM clause parse OK")
-
-        except Exception as e:
-            print(f"⚠ Clause build failed ({e}) — using all defaults")
-            clause_risk = ClauseRiskAssessment(**_NOT_FOUND_DEFAULTS)
-
-        # ─────────────────────────────────────────────────────
-        # 4️⃣ Deterministic Overrides
-        # Runs AFTER LLM — corrects "Not Found" where features
-        # clearly detected something. Also bidirectionally
-        # overrides where keyword evidence is stronger than LLM.
-        # ─────────────────────────────────────────────────────
+        risk_data = parsed.get("clause_risk", {}) if parsed else _NOT_FOUND_DEFAULTS
+        _VALID = {"High Risk", "Moderate Risk", "Low Risk", "Not Found"}
+        for key in _NOT_FOUND_DEFAULTS:
+            val = risk_data.get(key, "Not Found")
+            risk_data[key] = val if val in _VALID else "Not Found"
+            
+        clause_risk = ClauseRiskAssessment(**risk_data)
         _apply_deterministic_overrides(clause_risk, features)
 
-        llm_fields = sum(1 for v in clause_risk.model_dump().values() if v != "Not Found")
-        print(f"✅ After deterministic overrides: {llm_fields}/10 clauses classified")
-
-        # ─────────────────────────────────────────────────────
-        # 5️⃣ Confidence
-        # ─────────────────────────────────────────────────────
-        detected = [v for v in clause_risk.model_dump().values() if v not in ("Not Found", None, "")]
-        confidence = "High" if len(detected) >= 8 else "Medium" if len(detected) >= 5 else "Low"
-
-        # ─────────────────────────────────────────────────────
-        # 6️⃣ IRDAI Compliance
-        # ─────────────────────────────────────────────────────
-        raw_compliance = evaluate_irdai_compliance(policy_text)
-
-        if isinstance(raw_compliance, IRDAICompliance):
-            irdai_compliance = raw_compliance
-            compliance_dict  = raw_compliance.model_dump()
-        elif isinstance(raw_compliance, dict):
-            compliance_dict  = raw_compliance
-            irdai_compliance = IRDAICompliance(
-                compliance_flags=raw_compliance.get("compliance_flags", {}),
-                compliance_score=raw_compliance.get("compliance_score", 0),
-                compliance_rating=raw_compliance.get("compliance_rating", "Unknown"),
+        # Agent Validation Logic
+        agent_val = None
+        if agent_summary and parsed and "agent_validation" in parsed:
+            av_data = parsed["agent_validation"]
+            raw_claims = av_data.get("claims", [])
+            claims = []
+            for c in raw_claims:
+                # Legacy fallback: accept 'source_citation' or 'citation'
+                cit = c.get("citation") or c.get("source_citation")
+                claims.append(AgentClaim(
+                    claim=c.get("claim", ""),
+                    fact_check=c.get("fact_check", ""),
+                    is_correct=c.get("is_correct", False),
+                    citation=cit
+                ))
+            
+            # Compression: Cap discrepancies and verified claims
+            discrepancies = [c for c in claims if not c.is_correct]
+            verified = [c for c in claims if c.is_correct]
+            
+            agent_val = AgentValidation(
+                is_consistent=av_data.get("is_consistent", True),
+                verified_claims=verified[:3], # Cap to 3
+                discrepancies=discrepancies[:4], # Cap to 4
+                trust_score=av_data.get("trust_score", 100.0)
             )
-        else:
-            irdai_compliance = IRDAICompliance(
-                compliance_flags={}, compliance_score=0, compliance_rating="Unknown"
-            )
-            compliance_dict = irdai_compliance.model_dump()
 
         # ─────────────────────────────────────────────────────
-        # 7️⃣ Broker Risk
+        # 5️⃣ FINAL SCORING & COMPRESSION
         # ─────────────────────────────────────────────────────
+        irdai_compliance_obj = evaluate_irdai_compliance(policy_text_clean)
+        compliance_dict = irdai_compliance_obj.model_dump()
+        
         broker_risk_analysis = BrokerRiskAnalysis(
-            **analyze_broker_risk(
-                clause_risk=clause_risk,
-                compliance_data=compliance_dict,
-            )
+            **analyze_broker_risk(clause_risk=clause_risk, compliance_data=compliance_dict)
         )
 
-        # ─────────────────────────────────────────────────────
-        # 8️⃣ Scoring
-        # ─────────────────────────────────────────────────────
         score_data = compute_policy_score(clause_risk, compliance_dict) or {}
         score = float(score_data.get("adjusted_score", 50))
-
-        if broker_risk_analysis.structural_risk_level == "High":
-            score -= 10
-        elif broker_risk_analysis.structural_risk_level == "Elevated":
-            score -= 5
-
-        if broker_risk_analysis.transparency_score >= 70:
-            score += 5
-
+        
+        if agent_val:
+            if agent_val.trust_score < 40: score -= 15
+            elif agent_val.trust_score < 75: score -= 5
+            
         score = max(0.0, min(score, 100.0))
         rating = "Strong" if score >= 80 else "Moderate" if score >= 55 else "Weak"
 
-        score_breakdown = PolicyScoreBreakdown(
-            base_score=score_data.get("base_score", score),
-            adjusted_score=score,
-            rating=rating,
-            risk_index=score_data.get("risk_index", score),
-        )
+        # Compression: Deduplicate and Cap Flags
+        red_flags = list(dict.fromkeys(score_data.get("red_flags", [])))[:3]
+        pos_flags = list(dict.fromkeys(score_data.get("positive_flags", [])))[:3]
+        
+        # Capture regulatory citations
+        reg_citations = parsed.get("regulatory_citations", []) if parsed else []
+        reg_citations = list(dict.fromkeys([c for c in reg_citations if c]))[:5] # Cap to 5
 
-        checklist = [
-            "Ask about waiting period duration clearly.",
-            "Confirm pre-existing disease coverage timeline.",
-            "Check if room rent has caps.",
-            "Verify disease-specific sublimits.",
-            "Confirm co-payment percentage.",
-            "Clarify exclusions before purchase.",
-            "Verify restoration benefit applicability.",
-            "Check claim procedure complexity and deadlines.",
-        ]
+        # Checklist normalization
+        checklist = parsed.get("checklist_for_buyer", []) if parsed else []
+        if not checklist:
+            checklist = [
+                "Confirm the waiting period verbally with the agent.",
+                "Check for disease-specific sublimits in the policy schedule.",
+                "Verify restoration benefit triggers."
+            ]
+        checklist = list(dict.fromkeys(checklist))[:4] # Cap to 4
 
         return PrePurchaseReport(
             clause_risk=clause_risk,
-            score_breakdown=score_breakdown,
-            overall_policy_rating=rating,
-            summary=(
-                "Hybrid deterministic + LLM + IRDAI compliance + "
-                "structural risk assessment completed."
+            score_breakdown=PolicyScoreBreakdown(
+                base_score=score_data.get("base_score", score),
+                adjusted_score=score,
+                rating=rating,
+                risk_index=score_data.get("risk_index", 0.5),
             ),
+            overall_policy_rating=rating,
+            summary=f"Analysis completed using IRDAI RAG + Agent Fact-Check validation.",
             checklist_for_buyer=checklist,
-            confidence=confidence,
-            red_flags=score_data.get("red_flags", []),
-            positive_flags=score_data.get("positive_flags", []),
-            irdai_compliance=irdai_compliance,
+            confidence="High" if self.irdai_retriever else "Medium",
+            irdai_compliance=irdai_compliance_obj,
             broker_risk_analysis=broker_risk_analysis,
+            agent_validation=agent_val,
+            regulatory_citations=reg_citations,
+            red_flags=red_flags,
+            positive_flags=pos_flags,
         )

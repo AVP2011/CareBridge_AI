@@ -56,6 +56,15 @@ function buildLocalAnswer(question: string, report: ReportData, context: string)
     const comply   = (r.irdai_compliance as Record<string,unknown>)?.compliance_rating as string ?? "Unknown";
     const broker   = (r.broker_risk_analysis as Record<string,unknown>)?.structural_risk_level as string ?? "Unknown";
     const checklist = (r.checklist_for_buyer as string[]) ?? [];
+    const agentVal = (r.agent_validation as Record<string,any>) ?? null;
+
+    if (q.includes("agent") || q.includes("trust") || q.includes("lie") || q.includes("discrepancy") || q.includes("fact-check")) {
+      if (!agentVal) return "No agent summary was provided for fact-checking. To use this feature, enter what your agent told you in the input field above.";
+      const score = agentVal.trust_score ?? 100;
+      const issues = (agentVal.discrepancies as any[])?.length ?? 0;
+      const status = score >= 80 ? "The agent's claims look highly consistent with the policy text." : score >= 50 ? "There are some minor discrepancies between the agent's claims and the policy." : "Warning: Significant lies or exaggerations detected in the agent's summary.";
+      return `Agent Trust Score: ${Math.round(score)}%. ${status} We found ${issues} discrepancies. Check the 'Agent Summary Fact-Check' card for specific evidence from the policy.`;
+    }
 
     if (q.includes("risk") || q.includes("biggest") || q.includes("danger") || q.includes("concern")) {
       if (highKeys.length === 0) return `No clauses rated High Risk were detected. Moderate risks include: ${modKeys.slice(0,3).join(", ") || "none identified"}. The overall policy score is ${Math.round(score)}/100 (${rating}).`;

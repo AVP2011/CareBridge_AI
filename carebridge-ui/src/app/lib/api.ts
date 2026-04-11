@@ -4,7 +4,7 @@ import { AuditReport } from "../types/audit";
 
 // ✅ env-driven — set NEXT_PUBLIC_API_URL in .env.local for dev,
 //    and in Vercel/deployment env vars for production/Kaggle ngrok URL
-const BASE_URL = process.env.NEXT_PUBLIC_API_URL ?? "http://127.0.0.1:8000";
+const BASE_URL = process.env.NEXT_PUBLIC_API_URL ?? "https://uninvidious-lyla-capitally.ngrok-free.dev";
 
 const API = axios.create({
   baseURL: BASE_URL,
@@ -30,25 +30,27 @@ export const analyzeRejection = async (payload: {
 // --------------------------------------------------
 export const analyzePolicy = async (
   policyText: string,
-  providerId?: string
+  providerId?: string,
+  agentSummary?: string,
 ): Promise<PrePurchaseReport> => {
   const payload: any = { policy_text: policyText };
-  if (providerId) {
-      payload.provider_id = providerId;
-  }
+  if (providerId) payload.provider_id = providerId;
+  if (agentSummary) payload.agent_summary = agentSummary;
+
   const response = await API.post("/prepurchase", payload);
   return response.data;
 };
 
 // --------------------------------------------------
 // Pre-Purchase Analysis — file upload
-// Sends actual file as multipart/form-data to /prepurchase/upload
 // --------------------------------------------------
 export const analyzePolicyFromFile = async (
-  file: File
+  file: File,
+  agentSummary?: string,
 ): Promise<PrePurchaseReport> => {
   const formData = new FormData();
   formData.append("file", file);
+  if (agentSummary) formData.append("agent_summary", agentSummary);
 
   const response = await API.post("/prepurchase/upload", formData, {
     headers: { "Content-Type": "multipart/form-data" },
