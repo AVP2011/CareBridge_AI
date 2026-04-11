@@ -1,8 +1,82 @@
-# services/clause_matcher.py
-
+import json
 import re
 from typing import Dict, List, Optional, Any
-from services.synonyms import get_synonyms
+
+from schemas.intermediate import ClauseMatchResult
+from llm.generation import generate
+from llm.prompts import clause_matching_prompt
+
+
+_CLAUSE_DEFAULTS = {
+    "clause_category":     "Other / unclear",
+    "clause_detected":     "Not found in policy text",
+    "clause_clarity":      "Low",
+    "rejection_alignment": "Partial",
+    "explanation":         "Unable to confidently identify a matching policy clause.",
+    "confidence":          "Low",
+}
+
+
+def _safe_json_parse(raw: str) -> dict | None:
+    """Try clean parse, then outermost-block extraction."""
+    if not raw: return None
+    try:
+        return json.loads(raw.strip())
+    except Exception:
+        pass
+    match = re.search(r"\{[\s\S]*\}", raw)
+    if match:
+        try:
+            return json.loads(match.group(0))
+        except Exception:
+            pass
+    return None
+
+
+def run_clause_matcher(
+    model,
+    tokenizer,
+    policy_text:      str,
+    rejection_text:   str,
+    user_context:     str | None = None,
+) -> ClauseMatchResult:
+    """
+    LLM-based clause category matching for Indian health insurance.
+    """
+    # 🔒 Strict input truncation to prevent prompt overflow
+    policy_text    = re.sub(r"\s+", " ", (policy_text    or "").strip())[:3000]
+    rejection_text = re.sub(r"\s+", " ", (rejection_text or "").strip())[:1000]
+    user_context   = re.sub(r"\s+", " ", (user_context   or "").strip())[:500]
+
+    prompt = clause_matching_prompt(policy_text, rejection_text, user_context)
+
+    # Two attempts with JSON validation
+    for attempt in range(2):
+        raw_output = generate(
+            prompt, model, tokenizer,
+            json_mode=True,
+            max_new_tokens=256,
+        )
+
+        print(f"RAW CLAUSE OUTPUT (attempt {attempt + 1}):", raw_output)
+
+        parsed = _safe_json_parse(raw_output)
+        if parsed is None:
+            continue
+
+        # Sync key names (LLM might use underscores or camelCase, though prompt is specific)
+        for key, default in _CLAUSE_DEFAULTS.items():
+            parsed.setdefault(key, default)
+
+        try:
+            return ClauseMatchResult(**parsed)
+        except Exception as e:
+            print(f"⚠️ ClauseMatchResult validation failed (attempt {attempt + 1}):", e)
+            continue
+
+    print("⚠️ Clause matching fallback triggered")
+    return ClauseMatchResult(**_CLAUSE_DEFAULTS)
+
 
 class ClauseMatcher:
     """
