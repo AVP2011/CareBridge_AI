@@ -78,9 +78,46 @@ def patch_notebook():
             ]
             print("Patched Cell 6.")
 
+        # Patch Cell 4 (Installation)
+        if "Installing Python packages" in "".join(cell.get('source', [])):
+            cell['source'] = [
+                "import subprocess\n",
+                "import sys\n",
+                "!pip install -q pyngrok faiss-cpu sentence-transformers hf_transfer\n",
+                " \n",
+                "BACKEND = \"/kaggle/working/carebridge\"\n",
+                "\n",
+                "print(\"🐍 Installing/Updating Python packages...\\n\")\n",
+                "print(\"   Targeting RAG & Backend dependencies...\\n\")\n",
+                "\n",
+                "# Install from requirements.txt\n",
+                "result = subprocess.run(\n",
+                "    [sys.executable, \"-m\", \"pip\", \"install\", \"-r\", f\"{BACKEND}/requirements.txt\", \"-q\"],\n",
+                "    capture_output=True,\n",
+                "    text=True\n",
+                ")\n",
+                "\n",
+                "if result.returncode == 0:\n",
+                "    print(\"✅ All dependencies installed!\\n\")\n",
+                "else:\n",
+                "    print(f\"⚠️  Install note: {result.stderr[:500]}\\n\")\n",
+                "\n",
+                "# Verify key packages\n",
+                "print(\"📋 Verifying critical packages for RAG:\")\n",
+                "packages = [\"fastapi\", \"faiss\", \"sentence_transformers\", \"transformers\", \"torch\"]\n",
+                "for pkg in packages:\n",
+                "    try:\n",
+                "        __import__(pkg.replace('-', '_'))\n",
+                "        print(f\"   ✅ {pkg}: Ready\")\n",
+                "    except ImportError:\n",
+                "        print(f\"   ❌ {pkg}: MISSING\")\n",
+                "\n",
+                "print(\"\\n✅ Dependencies ready!\")"
+            ]
+            print("Patched Cell 4.")
+
         # Patch Cell 8 (Start Server)
         if "Starting FastAPI server" in "".join(cell.get('source', [])):
-            # Update to avoid redundant pip installs if possible, or keep as is with better environment propagation
             cell['source'] = [
                 "import subprocess\n",
                 "import time\n",
@@ -93,7 +130,7 @@ def patch_notebook():
                 "\n",
                 "print(\"🚀 Starting FastAPI Server...\\n\")\n",
                 "\n",
-                "# 1. Safety Cleanup\n",
+                "# 1. Clean up old runs\n",
                 "subprocess.run([\"pkill\", \"-f\", \"uvicorn\"], capture_output=True)\n",
                 "time.sleep(2)\n",
                 "\n",
@@ -107,7 +144,7 @@ def patch_notebook():
                 "    \"TRANSFORMERS_CACHE\": f\"{CACHE}/hub\",\n",
                 "})\n",
                 "\n",
-                "# Pass HF_TOKEN to server context\n",
+                "# Pass secrets\n",
                 "try:\n",
                 "    from kaggle_secrets import UserSecretsClient\n",
                 "    env[\"HF_TOKEN\"] = UserSecretsClient().get_secret(\"HF_TOKEN\")\n",
@@ -121,20 +158,21 @@ def patch_notebook():
                 "    )\n",
                 "\n",
                 "print(f\"   📝 Logs: {LOG_FILE}\")\n",
-                "print(\"   ⏳ Waiting for initialization...\")\n",
+                "print(\"   ⏳ Waiting for initialization (loading RAG indices & Model)...\\n\")\n",
                 "\n",
-                "# 4. Health Check Loop\n",
-                "for i in range(1, 40):\n",
+                "# 4. Health Check Loop (extended for large indices)\n",
+                "for i in range(1, 60):\n",
                 "    try:\n",
                 "        r = requests.get(\"http://localhost:8000/\", timeout=2)\n",
                 "        if r.status_code == 200:\n",
                 "            print(f\"\\n✅ Server is LIVE! Response: {r.json()}\")\n",
                 "            break\n",
                 "    except:\n",
-                "        print(f\"   [{i*5}s] still loading...\", end=\"\\r\")\n",
+                "        if i % 2 == 0:\n",
+                "            print(f\"   [{i*5}s] still loading model & regulatory indices...\", end=\"\\r\")\n",
                 "        time.sleep(5)\n",
                 "else:\n",
-                "    print(\"\\n⚠️  Server timeout. Check logs: !tail -50 /kaggle/working/server.log\")"
+                "    print(\"\\n⚠️  Server timeout after 5 mins. Check logs for ImportError or OOM: !tail -50 /kaggle/working/server.log\")"
             ]
             print("Patched Cell 8.")
 
