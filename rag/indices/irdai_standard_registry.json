@@ -1,0 +1,48 @@
+{
+  "rules": {
+    "waiting_period": {
+      "standard_label": "Initial Waiting Period",
+      "irdai_limit": "30 Days",
+      "regulation_ref": "IRDAI Health Insurance Regulations 2016, Regulation 13",
+      "critical_context": "Not applicable for accidental hospitalisation."
+    },
+    "pre_existing_disease": {
+      "standard_label": "PED Waiting Period",
+      "irdai_limit": "Max 48 Months",
+      "regulation_ref": "Standardization of Exclusions 2019, Clause 1",
+      "irdai_code": "Excl01"
+    },
+    "specific_disease_waiting": {
+      "standard_label": "Named Ailment Waiting",
+      "irdai_limit": "Varies (usually 12-24 months)",
+      "regulation_ref": "Standardization of Exclusions 2019, Clause 7.1.2",
+      "irdai_code": "Excl02"
+    },
+    "room_rent": {
+      "standard_label": "Room Rent Sublimit",
+      "irdai_limit": "Must be clearly specified in CIS",
+      "regulation_ref": "IRDAI Regulations 2016, Regulation 28(iii)",
+      "market_standard": "Single Standard AC Room is Low Risk"
+    },
+    "restoration": {
+      "standard_label": "Restoration of Sum Insured",
+      "irdai_limit": "Full restoration mandated for many products",
+      "regulation_ref": "Master Circular 2020",
+      "synonyms": ["re-fill", "reassure", "multiplier", "restore"]
+    }
+  },
+  "exclusion_codes": {
+    "Excl01": "Pre-existing Diseases",
+    "Excl02": "Specified disease/procedure waiting period",
+    "Excl03": "30-day waiting period",
+    "Excl04": "Investigation & Evaluation",
+    "Excl05": "Rest Cure, rehabilitation and respite care",
+    "Excl08": "Cosmetic or plastic Surgery",
+    "Excl10": "Breach of law",
+    "Excl11": "Excluded Providers",
+    "Excl12": "Treatment for Alcoholism/Drug use",
+    "Excl15": "Refractive Error",
+    "Excl17": "Sterility and Infertility",
+    "Excl18": "Maternity Expenses"
+  }
+}

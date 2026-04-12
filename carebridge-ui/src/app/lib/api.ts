@@ -16,10 +16,10 @@ const API = axios.create({
 // Post-Rejection Audit
 // --------------------------------------------------
 export const analyzeRejection = async (payload: {
-  policy_text:             string;
-  rejection_text:          string;
+  policy_text: string;
+  rejection_text: string;
   medical_documents_text?: string;
-  user_explanation?:       string;
+  user_explanation?: string;
 }): Promise<AuditReport> => {
   const response = await API.post("/audit", payload);
   return response.data;

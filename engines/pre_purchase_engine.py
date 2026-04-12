@@ -12,6 +12,7 @@ from services.broker_risk_engine import analyze_broker_risk
 from services.known_providers_db import get_pre_extracted_clause_risk, get_pre_extracted_summary
 
 from rag.retrievers import IRDAIRetriever, StandardClauseRetriever
+from services.compliance_bridge import ComplianceBridge
 
 from schemas.pre_purchase import (
     ClauseRiskAssessment,
@@ -139,6 +140,7 @@ class PrePurchaseEngine:
     def __init__(self, model, tokenizer):
         self.model = model
         self.tokenizer = tokenizer
+        self.bridge = ComplianceBridge()
         
         # Initialize RAG Components
         rag_dir = os.path.join(Path(__file__).parent.parent, "rag", "indices")
@@ -177,16 +179,36 @@ class PrePurchaseEngine:
             market_context = "\n\n".join([f"[{r['metadata']['insurer']}]: {r['text']}" for r in market_results])
 
         # ─────────────────────────────────────────────────────
-        # 2️⃣ CLEAN & SCAN
-        # ─────────────────────────────────────────────────────
-        policy_text_clean = re.sub(r"\s+", " ", policy_text).strip()[:8000]
-        features = extract_structured_features(policy_text_clean)
+        # 2️⃣ CLEAN & SCAN (Smart 3-Point Sampling)
+        # Instead of first 8k, we take Start (10k), Middle (8k), and Last (5k)
+        # to ensure we capture Benefits, Exclusions, and Procedures.
+        full_text_clean = re.sub(r"\s+", " ", policy_text).strip()
+        total_len = len(full_text_clean)
+        
+        if total_len <= 25000:
+            policy_text_sampled = full_text_clean
+        else:
+            # 3-Point Sampling Logic
+            head = full_text_clean[:10000]
+            last = full_text_clean[-5000:]
+            
+            # Find the middle point and take a slice
+            mid_start = (total_len // 2) - 5000
+            mid_end   = (total_len // 2) + 5000
+            middle = full_text_clean[mid_start:mid_end]
+            
+            policy_text_sampled = (
+                f"[START SECTION]\n{head}\n\n"
+                f"[MIDDLE SECTION (EXCLUSIONS)]\n{middle}\n\n"
+                f"[END SECTION (CLAIMS & TERMS)]\n{last}"
+            )
 
-        # ─────────────────────────────────────────────────────
+        features = extract_structured_features(policy_text_sampled)
+
         # 3️⃣ HYBRID GENERATION
         # ─────────────────────────────────────────────────────
         prompt = prepurchase_risk_prompt(
-            policy_text=policy_text_clean,
+            policy_text=policy_text_sampled,
             irdai_context=irdai_context,
             market_standards=market_context,
             agent_summary=agent_summary
@@ -237,7 +259,7 @@ class PrePurchaseEngine:
         # ─────────────────────────────────────────────────────
         # 5️⃣ FINAL SCORING & COMPRESSION
         # ─────────────────────────────────────────────────────
-        irdai_compliance_obj = evaluate_irdai_compliance(policy_text_clean)
+        irdai_compliance_obj = evaluate_irdai_compliance(policy_text_sampled)
         compliance_dict = irdai_compliance_obj.model_dump()
         
         broker_risk_analysis = BrokerRiskAnalysis(
@@ -260,6 +282,14 @@ class PrePurchaseEngine:
         
         # Capture regulatory citations
         reg_citations = parsed.get("regulatory_citations", []) if parsed else []
+        
+        # Bridge Augmentation: Auto-add citations based on detected risks
+        for clause_key, risk_val in clause_risk.model_dump().items():
+            if risk_val in ["High Risk", "Moderate Risk"]:
+                match = self.bridge.map_to_standard(clause_key)
+                if match:
+                    reg_citations.append(f"{match['standard_label']}: {match['regulation_ref']}")
+
         reg_citations = list(dict.fromkeys([c for c in reg_citations if c]))[:5] # Cap to 5
 
         # Checklist normalization

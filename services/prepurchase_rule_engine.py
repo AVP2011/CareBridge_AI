@@ -26,12 +26,14 @@ def extract_structured_features(policy_text: str):
             "preexisting"
         ]),
 
-        # Room rent
-        "room_rent_cap": "room rent" in text,
+        # Room rent (Support for categories like 'Twin Sharing')
+        "room_rent_cap": any(k in text for k in [
+            "room rent", "room category", "room type", "accommodation"
+        ]),
         "room_rent_percent": (
             1 if "1%" in text else
-            2 if "2%" in text else
-            3 if "3%" in text else 0
+            2 if "2%" in text or "twin sharing" in text else
+            3 if "3%" in text or "single standard ac" in text or "single private" in text or "no sub-limit" in text else 0
         ),
 
         # Co-payment
@@ -69,12 +71,11 @@ def extract_structured_features(policy_text: str):
             "administrative charges"
         ]),
 
-        # Restoration benefit
+        # Restoration benefit (Cross-Insurer DNA)
         "restoration_benefit": any(k in text for k in [
-            "restoration benefit",
-            "sum insured will be restored",
-            "restored once",
-            "reinstated"
+            "restoration", "sum insured restoration", "refill", "re-fill", "reinstatement",
+            "automatic restoration", "restore sum insured", "reassure", "recovery booster",
+            "multiplier benefit", "exhaustion of sum insured"
         ]),
 
         # Claim procedure complexity

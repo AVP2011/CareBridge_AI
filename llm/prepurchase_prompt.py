@@ -36,6 +36,12 @@ CONSTRAINTS:
 3. DEDUPLICATION: Do not repeat the same issue across multiple sections.
 4. TONE: Professional, objective, and actionable.
 
+CONCEPT MATCHING GUIDE (India-specific insurers):
+- ROOM RENT: Recognize 'Twin Sharing' (Moderate Risk), 'Single Private AC' (Low Risk), or '% units' (High/Moderate Risk).
+- RESTORATION: Recognize 'Re-fill', 'Reassure', 'Multiplier', 'Refill Sum Insured' as Restoration benefits.
+- WAITING PERIOD: Identify 'Initial' (30 days), 'Specific/Named Illness' (24-36 months), and 'PED' (36-48 months).
+- CO-PAYMENT: Look for 'Member Share' or 'Cost Sharing'.
+
 OUTPUT SCHEMA (JSON only):
 {{
   "clause_risk": {{
