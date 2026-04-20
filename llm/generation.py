@@ -14,7 +14,7 @@ def generate(
     temperature: float = 0.0,
 ):
     """
-    Robust generator for MedGemma 4B-IT.
+    Robust generator for Gemma-2 2B-IT.
     """
 
     # --------------------------------------------------

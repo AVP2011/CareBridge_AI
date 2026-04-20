@@ -28,7 +28,12 @@
       "standard_label": "Restoration of Sum Insured",
       "irdai_limit": "Full restoration mandated for many products",
       "regulation_ref": "Master Circular 2020",
-      "synonyms": ["re-fill", "reassure", "multiplier", "restore"]
+      "synonyms": [
+        "re-fill",
+        "reassure",
+        "multiplier",
+        "restore"
+      ]
     }
   },
   "exclusion_codes": {

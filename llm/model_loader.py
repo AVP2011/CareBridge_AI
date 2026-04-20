@@ -6,12 +6,12 @@ MODEL_NAME = "google/gemma-2-2b-it"
 
 class ModelLoader:
     """
-    Singleton loader for MedGemma 4B-IT (4-bit).
+    Singleton loader for Gemma-2 2B-IT (4-bit).
 
     ✔ prevents CUDA device-side assert
     ✔ forces Gemma padding requirements
     ✔ ensures pad/eos tokens always valid
-    ✔ optimized for low VRAM environments
+    ✔ optimized for low VRAM environments (fits in 6GB GPUs)
     """
 
     _instance = None
@@ -26,7 +26,7 @@ class ModelLoader:
         if self._initialized:
             return
 
-        print("🔄 Loading MedGemma 4B in 4-bit mode...")
+        print(f"🔄 Loading {MODEL_NAME} in 4-bit mode...")
 
         # ─────────────────────────────────────
         # Quantization (fits in 6GB VRAM)
@@ -83,7 +83,7 @@ class ModelLoader:
         self.model.eval()
         self._initialized = True
 
-        print("✅ MedGemma 4B loaded in 4-bit mode")
+        print(f"✅ {MODEL_NAME} loaded in 4-bit mode")
         print(f"   pad_token_id : {self.tokenizer.pad_token_id}")
         print(f"   eos_token_id : {self.tokenizer.eos_token_id}")
 

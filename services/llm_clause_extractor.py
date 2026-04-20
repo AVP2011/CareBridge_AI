@@ -1,6 +1,6 @@
 """
 CareBridge AI - LLM Clause Extractor (Fallback)
-Uses MedGemma when regex patterns fail
+Uses Gemma-2 2B when regex patterns fail
 """
 
 import json
@@ -12,7 +12,7 @@ class LLMClauseExtractor:
     Extract clauses using LLM when regex fails
     """
     
-    def __init__(self, model_name="google/gemma-2-9b-it"):
+    def __init__(self, model_name="google/gemma-2-2b-it"):
         self.model_name = model_name
         # Load your model here
         # self.model = load_model(model_name)
@@ -34,7 +34,7 @@ class LLMClauseExtractor:
         """
         prompt = self._build_extraction_prompt(policy_text, missing_clause_types)
         
-        # Call your LLM (MedGemma)
+        # Call your LLM (Gemma-2 2B)
         # response = self.model.generate(prompt)
         
         # For now, return template
