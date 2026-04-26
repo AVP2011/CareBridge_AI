@@ -155,6 +155,95 @@ class PrePurchaseEngine:
 
     def run(self, policy_text: str, provider_id: str = None, agent_summary: str = None) -> PrePurchaseReport:
         # ─────────────────────────────────────────────────────
+        # 0️⃣ PRE-EXTRACTED PROVIDER OVERRIDE
+        # ─────────────────────────────────────────────────────
+        if provider_id and provider_id != "Other providers":
+            from services.known_providers_db import get_pre_extracted_clause_risk, get_pre_extracted_summary
+            pre_extracted = get_pre_extracted_clause_risk(provider_id)
+            
+            if pre_extracted:
+                clause_risk = ClauseRiskAssessment(**pre_extracted)
+                summary = get_pre_extracted_summary(provider_id)
+                compliance_dict = evaluate_irdai_compliance("").model_dump() # dummy empty string since not needed
+                
+                broker_risk_analysis = BrokerRiskAnalysis(
+                    **analyze_broker_risk(clause_risk=clause_risk, compliance_data=compliance_dict)
+                )
+
+                score_data = compute_policy_score(clause_risk, compliance_dict) or {}
+                score = float(score_data.get("adjusted_score", 65))
+                rating = "Strong" if score >= 80 else "Moderate" if score >= 55 else "Weak"
+                
+                # Check agent validation since agent_summary might be provided
+                agent_val = None
+                if agent_summary:
+                    prompt = prepurchase_risk_prompt(
+                        policy_text="Pre-extracted clauses used. Do not read policy text, just validate agent_summary against standard typical policies.",
+                        irdai_context="",
+                        market_standards="",
+                        agent_summary=agent_summary
+                    )
+                    raw_output = generate(prompt, self.model, self.tokenizer, json_mode=True, max_new_tokens=600)
+                    parsed = _safe_json_parse(raw_output)
+                    if parsed and "agent_validation" in parsed:
+                        av_data = parsed["agent_validation"]
+                        raw_claims = av_data.get("claims", [])
+                        claims = []
+                        for c in raw_claims:
+                            cit = c.get("citation") or c.get("source_citation")
+                            claims.append(AgentClaim(
+                                claim=c.get("claim", ""),
+                                fact_check=c.get("fact_check", ""),
+                                is_correct=c.get("is_correct", False),
+                                citation=cit
+                            ))
+                        agent_val = AgentValidation(
+                            is_consistent=av_data.get("is_consistent", True),
+                            verified_claims=[c for c in claims if c.is_correct][:3],
+                            discrepancies=[c for c in claims if not c.is_correct][:4],
+                            trust_score=av_data.get("trust_score", 100.0)
+                        )
+                        if agent_val.trust_score < 40: score -= 15
+                        elif agent_val.trust_score < 75: score -= 5
+                
+                score = max(0.0, min(score, 100.0))
+                rating = "Strong" if score >= 80 else "Moderate" if score >= 55 else "Weak"
+
+                checklist = [
+                    "Confirm the waiting period verbally with the agent.",
+                    "Check for disease-specific sublimits in the policy schedule.",
+                    "Verify restoration benefit triggers."
+                ]
+                
+                # Fill regulatory citations
+                reg_citations = []
+                for clause_key, risk_val in clause_risk.model_dump().items():
+                    if risk_val in ["High Risk", "Moderate Risk"]:
+                        match = self.bridge.map_to_standard(clause_key)
+                        if match:
+                            reg_citations.append(f"{match['standard_label']}: {match['regulation_ref']}")
+
+                return PrePurchaseReport(
+                    clause_risk=clause_risk,
+                    score_breakdown=PolicyScoreBreakdown(
+                        base_score=score_data.get("base_score", score),
+                        adjusted_score=score,
+                        rating=rating,
+                        risk_index=score_data.get("risk_index", 0.5),
+                    ),
+                    overall_policy_rating=rating,
+                    summary=summary,
+                    checklist_for_buyer=checklist,
+                    confidence="High",
+                    irdai_compliance=evaluate_irdai_compliance(""),
+                    broker_risk_analysis=broker_risk_analysis,
+                    agent_validation=agent_val,
+                    regulatory_citations=list(dict.fromkeys(reg_citations))[:5],
+                    red_flags=list(dict.fromkeys(score_data.get("red_flags", [])))[:3],
+                    positive_flags=list(dict.fromkeys(score_data.get("positive_flags", [])))[:3],
+                )
+
+        # ─────────────────────────────────────────────────────
         # 1️⃣ RAG Data Gathering
         # ─────────────────────────────────────────────────────
         irdai_context = ""

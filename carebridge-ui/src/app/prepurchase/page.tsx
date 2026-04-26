@@ -57,6 +57,7 @@ export default function PrePurchasePage(): JSX.Element {
   const handleAnalyze = async () => {
     setError(null); setReport(null);
     if (providerId !== "Other providers") {
+        setLoading(true);
         try {
             const data = await analyzePolicy("", providerId, agentSummary);
             if (data) {
