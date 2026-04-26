@@ -274,6 +274,11 @@ class PrePurchaseEngine:
         full_text_clean = re.sub(r"\s+", " ", policy_text).strip()
         total_len = len(full_text_clean)
         
+        # VERY IMPORTANT: We run the deterministic feature extractor on the FULL 
+        # document BEFORE sampling. This ensures no clauses are missed by the LLM
+        # due to context-window truncation.
+        features = extract_structured_features(full_text_clean)
+        
         if total_len <= 25000:
             policy_text_sampled = full_text_clean
         else:
@@ -291,8 +296,6 @@ class PrePurchaseEngine:
                 f"[MIDDLE SECTION (EXCLUSIONS)]\n{middle}\n\n"
                 f"[END SECTION (CLAIMS & TERMS)]\n{last}"
             )
-
-        features = extract_structured_features(policy_text_sampled)
 
         # 3️⃣ HYBRID GENERATION
         # ─────────────────────────────────────────────────────
