@@ -55,9 +55,7 @@ export const analyzePolicyFromFile = async (
   formData.append("file", file);
   if (agentSummary) formData.append("agent_summary", agentSummary);
 
-  const response = await API.post("/prepurchase/upload", formData, {
-    headers: { "Content-Type": "multipart/form-data" },
-  });
+  const response = await API.post("/prepurchase/upload", formData);
   return response.data;
 };
 
