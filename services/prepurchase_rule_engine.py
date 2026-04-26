@@ -75,7 +75,7 @@ def extract_structured_features(policy_text: str):
         "restoration_benefit": any(k in text for k in [
             "restoration", "sum insured restoration", "refill", "re-fill", "reinstatement",
             "automatic restoration", "restore sum insured", "reassure", "recovery booster",
-            "multiplier benefit", "exhaustion of sum insured"
+            "multiplier benefit", "exhaustion of sum insured", "reload"
         ]),
 
         # Claim procedure complexity
