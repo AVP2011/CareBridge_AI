@@ -8,7 +8,10 @@ const BASE_URL = process.env.NEXT_PUBLIC_API_URL ?? "https://uninvidious-lyla-ca
 
 const API = axios.create({
   baseURL: BASE_URL,
-  headers: { "Content-Type": "application/json" },
+  headers: { 
+    "Content-Type": "application/json",
+    "ngrok-skip-browser-warning": "true"
+  },
   timeout: 360_000,   // 6 min — covers MedGemma generation time on T4
 });
 
