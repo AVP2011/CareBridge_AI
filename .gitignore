@@ -28,5 +28,3 @@ Thumbs.db
 .ipynb_checkpoints/
 
 # FAISS index (if generated locally)
-*.index
-*.faiss
