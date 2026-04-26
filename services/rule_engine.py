@@ -16,6 +16,20 @@ _REJECTION_PATTERNS = [
         r"known condition",
         r"declared condition",
         r"history of",
+        r"condition.*exist.*before",
+        r"symptoms.*prior.*policy",
+    ]),
+    ("Non-disclosure", [
+        r"non.?disclosure",
+        r"material fact.*not.*disclos",
+        r"not disclosed",
+        r"withheld.*information",
+        r"proposal.*void",
+        r"rendering.*policy.*void",
+        r"failed to disclose",
+        r"concealment",
+        r"misrepresent",
+        r"duty of disclosure",
     ]),
     ("Waiting period", [
         r"waiting period",
@@ -23,6 +37,8 @@ _REJECTION_PATTERNS = [
         r"initial waiting",
         r"waiting period.*not.*elapsed",
         r"policy.*not.*active.*sufficient",
+        r"not admissible.*waiting",
+        r"falls within.*waiting",
     ]),
     ("Room rent limit", [
         r"room rent",
@@ -30,6 +46,8 @@ _REJECTION_PATTERNS = [
         r"room rent.*exceed",
         r"accommodation.*limit",
         r"bed charge.*limit",
+        r"proportionate deduction",
+        r"room.*eligib",
     ]),
     ("Co-payment", [
         r"co.?pay",
@@ -51,6 +69,21 @@ _REJECTION_PATTERNS = [
         r"incomplete.*record",
         r"document.*required",
         r"medical.*record.*not.*provid",
+        r"repeated request",
+        r"supporting.*document.*not",
+        r"bills.*not.*submitted",
+        r"mismatch.*diagnosis",
+    ]),
+    ("Not medically necessary", [
+        r"not.*medically necessary",
+        r"medically.*not.*necessary",
+        r"not.*required.*medical",
+        r"treatment.*not.*warranted",
+        r"procedure.*not.*indicated",
+        r"elective.*procedure",
+        r"not.*essential",
+        r"could.*treated.*outpatient",
+        r"opa.*basis",
     ]),
     ("Policy exclusion", [
         r"cosmetic",
@@ -59,23 +92,94 @@ _REJECTION_PATTERNS = [
         r"excluded.*condition",
         r"permanent exclusion",
         r"listed.*exclusion",
+        r"falls under.*exclusion",
+        r"not payable",
+        r"dental",
+        r"maternity.*exclusion",
+        r"congenital",
+        r"self.?inflict",
+    ]),
+    ("Fraud / Investigation", [
+        r"under investigation",
+        r"fraud",
+        r"discrepanc",
+        r"suspicious",
+        r"fabricat",
+        r"inflated.*bill",
+        r"misrepresent.*claim",
+        r"verification.*pending",
+        r"investigation.*ongoing",
+    ]),
+    ("Delay in intimation", [
+        r"not intimated",
+        r"delay.*intimation",
+        r"not.*reported.*within",
+        r"stipulated.*time.*frame",
+        r"late.*notification",
+        r"intimation.*not.*received",
+        r"failed to inform.*within",
+        r"24.*hour",
+        r"48.*hour",
+    ]),
+    ("Network hospital", [
+        r"not.*part.*network",
+        r"non.?network",
+        r"cashless.*not.*applicable",
+        r"not.*empanelled",
+        r"not.*approved.*hospital",
+        r"reimbursement.*only",
+        r"outside.*network",
     ]),
 ]
+
+# --------------------------------------------------
+# Insurer-tone aliases — secondary pass
+# Real rejection letters rarely say "rejected"
+# They use softer phrasing that can slip past keyword scanners
+# --------------------------------------------------
+_INSURER_TONE_MARKERS = [
+    r"not admissible",
+    r"not payable",
+    r"as per.*terms.*condition",
+    r"as per.*clause",
+    r"as per.*policy.*guideline",
+    r"hereby.*repudiat",
+    r"claim.*not.*entertain",
+    r"regret to inform",
+    r"unable to process",
+    r"we are constrained",
+]
+
+
+def has_insurer_tone(rejection_text: str) -> bool:
+    """Returns True if the rejection letter uses typical insurer soft-language."""
+    if not rejection_text:
+        return False
+    text = rejection_text.lower()
+    return any(re.search(p, text) for p in _INSURER_TONE_MARKERS)
 
 
 def classify_rejection_rule_based(rejection_text: str | None) -> str | None:
     """
     Returns the best-matching clause category using phrase-level regex,
     or None if no confident match found.
+    Two-pass: first tries hard keyword match, then tone markers for signal.
     """
     if not rejection_text:
         return None
 
     text = rejection_text.lower()
 
+    # Pass 1 — hard keyword match (high confidence)
     for category, patterns in _REJECTION_PATTERNS:
         if any(re.search(p, text) for p in patterns):
             return category
+
+    # Pass 2 — tone marker detected but no category matched
+    # Return a sentinel so the caller knows this IS a rejection letter
+    # but the specific clause needs LLM interpretation
+    if has_insurer_tone(text):
+        return "Other / unclear"
 
     return None
 

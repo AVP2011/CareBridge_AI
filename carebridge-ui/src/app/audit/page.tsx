@@ -419,6 +419,240 @@ function buildOverturnList(r: AuditReport): string[] {
 }
 
 /* ─────────────────────────────────────────────────────────────────
+   SYNTHETIC SAMPLE TEST CASES (5 real-world patterns)
+   Generated from Reddit/forum research — no real data used
+───────────────────────────────────────────────────────────────── */
+const SAMPLE_CASES = [
+  {
+    label: "PED + Non-disclosure",
+    tag: "Most Common",
+    tagColor: "#8c1f14",
+    tagBg: "#f5d0cc",
+    icon: "🟥",
+    policy: `HEALTH INSURANCE POLICY — STANDARD INDIVIDUAL PLAN
+Sum Insured: ₹5,00,000 | Policy No: HI/2021/00441
+Policyholder: Rajesh Kumar | Inception Date: 12 March 2021
+
+Clause 4.1 — Pre-Existing Diseases (PED):
+Any condition, ailment, injury or disease for which the Insured Person had signs, symptoms, was diagnosed or received treatment during the 48 months prior to the first policy issuance date shall be treated as a Pre-Existing Disease and shall not be covered during the waiting period of 48 months from the date of inception.
+
+Clause 4.2 — Duty of Disclosure:
+The Proposer is under an obligation to truthfully disclose all material facts at the time of proposal. Failure to disclose, whether deliberate or otherwise, may render this policy voidable at the Company's discretion.`,
+    rejection: `Date: 14 February 2025
+Claim Reference: CLM/2025/HI/00881
+Re: Health Insurance Claim — Rajesh Kumar — Policy No: HI/2021/00441
+
+Dear Mr. Kumar,
+
+We regret to inform you that upon detailed scrutiny of your claim documents submitted on 02 February 2025 pertaining to hospitalisation at Medicity Hospital, New Delhi, we are constrained to repudiate the claim on the following grounds:
+
+1. Based on the medical records and discharge summary submitted, the treating physician has noted a chronic history of Type-2 Diabetes Mellitus spanning approximately 3 years prior to policy inception. This condition is therefore classified as a Pre-Existing Disease under Clause 4.1 of the policy.
+
+2. The said condition was not disclosed at the time of proposal dated 10 March 2021. Material facts were withheld at the time of proposal, rendering the insurer unable to correctly assess the risk at inception.
+
+In view of the above, the claim amounting to ₹1,24,500 is not admissible as per the terms and conditions of the policy.
+
+You may approach our Grievance Redressal Officer within 15 days of receipt of this letter.
+
+Yours sincerely,
+Claims Department
+HealthGuard Insurance Company Ltd.`,
+    medical: `Discharge Summary — Medicity Hospital, New Delhi
+Patient: Mr. Rajesh Kumar | Age: 47 | Date of Admission: 28 January 2025
+Diagnosis: Diabetic Nephropathy — Stage 3 Chronic Kidney Disease
+
+History of Present Illness:
+Patient is a known case of Type-2 Diabetes Mellitus, diagnosed approximately 3–4 years ago and managed on oral hypoglycaemics. No prior hospitalisation on record. Presenting with bilateral pedal edema, fatigue and elevated serum creatinine (3.1 mg/dL).
+
+Treatment: IV fluids, Nephrology consult, started on dialysis support. Discharged after 6 days in stable condition.`,
+    explanation: "I purchased this policy in good faith and honestly forgot to mention my diabetes — I thought it was controlled and minor. I had no history of kidney disease before this admission. The doctor confirmed the kidney condition is a new development.",
+  },
+  {
+    label: "Waiting Period — Emergency",
+    tag: "Tricky",
+    tagColor: "#7a4e08",
+    tagBg: "#faecd0",
+    icon: "🟧",
+    policy: `HEALTH INSURANCE POLICY — FAMILY FLOATER PLAN
+Sum Insured: ₹10,00,000 | Policy No: FF/2024/07712
+Policyholder: Priya Sharma | Inception Date: 01 November 2024
+
+Clause 3.1 — Initial Waiting Period:
+All claims arising within 30 days from the date of commencement of the policy shall not be admissible, except for claims arising due to accidents.
+
+Clause 3.2 — Disease-Specific Waiting Period:
+Certain specified diseases including hernia, cataract, joint replacement, and urinary calculi shall have a waiting period of 24 months from the first date of inception.`,
+    rejection: `Date: 10 December 2024
+Claim Reference: CLM/2024/FF/03341
+Re: Cashless Pre-Authorisation Denial — Priya Sharma — Policy No: FF/2024/07712
+
+Dear Ms. Sharma,
+
+This is with reference to your request for pre-authorisation of cashless treatment at Fortis Hospital, Mumbai submitted on 08 December 2024.
+
+We wish to inform you that the claim is not admissible under your current policy as the treatment for cholelithiasis (gallstones) with laparoscopic cholecystectomy has been requested within 30 days of policy commencement on 01 November 2024.
+
+The claim falls within the initial waiting period as stipulated under Clause 3.1 of the policy terms and conditions and is therefore not payable at this stage.
+
+We encourage you to arrange for alternate payment arrangements for the planned procedure.
+
+Yours sincerely,
+Pre-Authorisation Desk
+Shield Health Insurance`,
+    medical: `Consultant Surgeon's Certificate
+Patient: Ms. Priya Sharma | Age: 38
+Hospital: Fortis Hospital, Mumbai
+
+Diagnosis: Symptomatic Cholelithiasis — acute episode with biliary colic.
+Recommendation: Laparoscopic Cholecystectomy (surgical removal of gallbladder) — medically necessary. Patient presenting with acute pain and risk of cholecystitis if surgery delayed. Not an elective procedure in current clinical context.`,
+    explanation: "My gallstones were first discovered only 2 months ago — after I bought this policy. The pain became acute and the surgeon says it cannot be delayed. This is not a planned or elective surgery — it is an emergency medical situation.",
+  },
+  {
+    label: "Room Rent + Proportionate Deduction",
+    tag: "Partial Rejection",
+    tagColor: "#2d3a7a",
+    tagBg: "#dce4f5",
+    icon: "⚫",
+    policy: `HEALTH INSURANCE POLICY — INDIVIDUAL PLAN
+Sum Insured: ₹3,00,000 | Policy No: IND/2022/03310
+Policyholder: Amit Verma | Inception Date: 5 June 2022
+
+Clause 5.3 — Room Rent Limit:
+Room rent (including nursing charges) shall be payable up to 1% of Sum Insured per day (i.e., ₹3,000 per day for a Sum Insured of ₹3,00,000). If room rent exceeds the eligible limit, all associated charges including surgeon fees, OT charges, and ICU charges shall be scaled down proportionately.
+
+The policy shall be liable only to pay that proportion of all such charges which would have been payable had the Insured Person occupied a room within the eligible rent limit.`,
+    rejection: `Date: 03 April 2025
+Claim Reference: CLM/2025/IND/00934
+Re: Partial Claim Settlement — Amit Verma — Policy No: IND/2022/03310
+
+Dear Mr. Verma,
+
+We have processed your claim for hospitalisation at Max Hospital, Delhi from 15 March 2025 to 22 March 2025.
+
+Claim Amount Submitted: ₹1,87,000
+Admissible Amount After Deduction: ₹94,500
+
+Reason for Deduction:
+You opted for a Private Single AC Room at a rent of ₹7,500 per day, which exceeds your eligible room rent limit of ₹3,000 per day under Clause 5.3 of your policy. As per policy terms, room rent exceeded eligibility, resulting in a proportionate deduction of 60% across all associated hospitalisation charges including surgical fees, anaesthesia, and ICU charges.
+
+The admissible claim of ₹94,500 has been processed for payment.
+
+Yours sincerely,
+Claims Processing Team
+Star Cover Insurance`,
+    medical: `Discharge Summary — Max Hospital, New Delhi
+Patient: Mr. Amit Verma | Age: 52
+Admission: 15 March 2025 | Discharge: 22 March 2025
+Diagnosis: Acute Appendicitis → Laparoscopic Appendectomy (emergency)
+
+Room Type: Private Single AC Room — ₹7,500/day
+Surgical Charges: ₹65,000
+ICU (1 day post-op): ₹18,000
+OT Charges: ₹24,000
+Medicine / Consumables: ₹22,000
+Total Bill: ₹1,87,000`,
+    explanation: "I was admitted as an emergency and the hospital allocated whatever room was available at that time. I was not given a choice of room type during emergency admission. I did not choose a premium room voluntarily.",
+  },
+  {
+    label: "Missing Documents + Delay",
+    tag: "Documentation",
+    tagColor: "#1e5c2e",
+    tagBg: "#d6eddc",
+    icon: "🟫",
+    policy: `HEALTH INSURANCE POLICY — INDIVIDUAL PLAN
+Sum Insured: ₹5,00,000 | Policy No: HI/2020/09981
+Policyholder: Sunita Joshi | Inception Date: 22 January 2020
+
+Clause 7.1 — Claim Intimation:
+The Company must be intimated of any planned hospitalisation at least 48 hours prior to admission and within 24 hours of any emergency hospitalisation. Failure to intimate within the stipulated time frame may result in rejection of the claim.
+
+Clause 7.2 — Supporting Documents:
+The Insured Person shall submit all original documents including but not limited to: Original bills and receipts, discharge summary, investigation reports, doctor's prescription, and indoor case papers within 30 days of discharge.`,
+    rejection: `Date: 28 March 2025
+Claim Reference: CLM/2025/HI/02218
+Re: Claim Repudiation — Sunita Joshi — Policy No: HI/2020/09981
+
+Dear Ms. Joshi,
+
+This letter is in reference to your reimbursement claim of ₹78,500 for hospitalisation at City Hospital, Pune from 14 February 2025 to 19 February 2025.
+
+After review of the documents submitted, we regret to inform you that the claim is hereby repudiated on the following grounds:
+
+1. Delay in Intimation: The hospitalisation was not intimated within 24 hours of emergency admission as required under Clause 7.1. Intimation was received 5 days after admission.
+
+2. Supporting documents were not submitted despite repeated requests sent on 28 February and 12 March 2025. The following documents remain outstanding:
+   • Original pharmacy bills (₹12,400)
+   • Indoor Case Papers / Nursing Notes
+   • Complete investigation reports (MRI report missing)
+
+As the required supporting documentation has not been provided, we are unable to process this claim further. The claim is not payable under the current circumstances.
+
+Yours sincerely,
+Claims Department
+Blue Cross Insurance`,
+    medical: `Discharge Summary — City Hospital, Pune
+Patient: Ms. Sunita Joshi | Age: 61
+Admission: 14 February 2025 (Emergency) | Discharge: 19 February 2025
+Diagnosis: Acute Cerebrovascular Accident (Ischemic Stroke)
+
+Condition at admission: Sudden onset left-sided weakness, slurred speech. Brought to ER by family. Patient unable to communicate at admission.
+Treatment: CT Brain (no bleed), thrombolysis, physiotherapy, neurology consult.
+Note: Patient's family was in significant distress during admission and managing multiple simultaneous responsibilities.`,
+    explanation: "My mother had an emergency stroke. I was alone managing everything with no help. I called the insurance company as soon as I could — I didn't even know about the 24-hour rule. I also couldn't get all the bills immediately because the hospital delayed issuing them.",
+  },
+  {
+    label: "Exclusion + Not Medically Necessary",
+    tag: "Combined",
+    tagColor: "#4a1a7a",
+    tagBg: "#ede4f5",
+    icon: "🟪",
+    policy: `HEALTH INSURANCE POLICY — INDIVIDUAL PLAN
+Sum Insured: ₹7,50,000 | Policy No: IND/2023/11450
+Policyholder: Vikram Singh | Inception Date: 1 April 2023
+
+Clause 6.1 — Permanent Exclusions:
+The following shall not be covered under this policy under any circumstances:
+(a) Cosmetic or aesthetic treatment of any kind unless necessitated by an accident
+(b) Dental treatment except requiring hospitalisation for more than 24 hours
+(c) Obesity / weight management treatment and related complications
+(d) Treatment of alcoholism, drug addiction or any substance abuse
+
+Clause 6.5 — Medically Necessary Treatment:
+Only treatment that is medically necessary, i.e., required for the treatment of an illness or injury and could not have been reasonably omitted without adversely affecting the patient's condition, shall be covered. Elective procedures undertaken for convenience or patient preference are excluded.`,
+    rejection: `Date: 17 April 2025
+Claim Reference: CLM/2025/IND/04450
+Re: Cashless Denial — Vikram Singh — Policy No: IND/2023/11450
+
+Dear Mr. Singh,
+
+This is with reference to your pre-authorisation request submitted on 15 April 2025 for septoplasty and functional endoscopic sinus surgery (FESS) at Apollo Hospital, Hyderabad.
+
+After review of the clinical documents provided, we are unable to approve the cashless request on the following grounds:
+
+1. The procedure (septoplasty) partially falls under procedures that are not considered medically necessary as per our policy guidelines, as the severity criteria for surgical intervention per the Lund-Mackay score submitted does not meet our internal threshold.
+
+2. The request includes correction of nasal deviation which could be considered of cosmetic benefit and therefore falls under permanent exclusions of the policy under Clause 6.1(a).
+
+We recommend the treating physician provide additional documentation establishing the functional (not aesthetic) necessity of the procedure for reconsideration.
+
+Yours faithfully,
+Medical Review Team
+Prime Shield Insurance`,
+    medical: `ENT Specialist Report — Apollo Hospital, Hyderabad
+Patient: Mr. Vikram Singh | Age: 34
+Date: 10 April 2025
+
+Diagnosis: Significant deviated nasal septum (DNS) with bilateral chronic sinusitis.
+Symptoms: Severe nasal obstruction (bilateral), recurrent sinusitis episodes (4 in past 12 months), sleep apnoea grade 1, chronic headaches.
+
+Lund-Mackay CT Score: 16/24 — indicates moderate-to-severe sinus disease.
+Recommendation: Functional septoplasty + FESS is medically indicated. Not a cosmetic procedure — patient has documented functional impairment confirmed by acoustic rhinometry and sleep study.
+Conservative management with nasal steroids and antibiotics has failed over 18 months.`,
+    explanation: "My doctor has clearly stated this is a functional surgery needed because I cannot breathe properly and keep getting serious sinus infections. This is NOT cosmetic — it is a medically necessary procedure that I have been putting off for 2 years. Conservative treatments have failed.",
+  },
+];
+
+/* ─────────────────────────────────────────────────────────────────
    MAIN PAGE
 ───────────────────────────────────────────────────────────────── */
 export default function AuditPage() {
@@ -447,7 +681,6 @@ export default function AuditPage() {
           setError("Policy PDF and Rejection Letter are required in upload mode."); return;
         }
     }
-    
     setLoading(true); setError(null); setReport(null);
     try {
       let data;
@@ -471,6 +704,18 @@ export default function AuditPage() {
     } catch {
       setError("Audit could not be processed. Ensure files are valid and under the size limit.");
     } finally { setLoading(false); }
+  };
+
+  const loadSample = (s: typeof SAMPLE_CASES[0]) => {
+    setMode("text");
+    setPolicyText(s.policy);
+    setRejectionText(s.rejection);
+    setMedicalText(s.medical);
+    setUserExplanation(s.explanation);
+    setReport(null);
+    setError(null);
+    setActiveField(null);
+    setTimeout(() => document.getElementById("audit-form")?.scrollIntoView({ behavior: "smooth" }), 80);
   };
 
   const appealCfg = report ? (APPEAL_CFG[report.appeal_strength.label] || APPEAL_CFG["Moderate"]) : null;
@@ -534,6 +779,35 @@ export default function AuditPage() {
         .spinner { width: 13px; height: 13px; border: 2px solid rgba(255,255,255,.3); border-top-color: white; border-radius: 50%; animation: spin .7s linear infinite; }
         @keyframes spin { to { transform: rotate(360deg) } }
         .err-msg { margin-top: 14px; padding: 12px 16px; background: #f5d0cc; border: 1px solid #e08070; border-radius: 2px; font-family: 'DM Mono', monospace; font-size: 11px; color: #8c1f14; }
+
+        /* ── SAMPLE CASES STRIP ───────────────────────────── */
+        .samples-section {
+          max-width: 1160px; margin: 0 auto; padding: 28px 40px 0;
+        }
+        .samples-eyebrow {
+          font-family: 'DM Mono', monospace; font-size: 9px; letter-spacing: .16em;
+          text-transform: uppercase; color: #5a7060; margin-bottom: 12px;
+          display: flex; align-items: center; gap: 10px;
+        }
+        .samples-eyebrow::after { content: ''; flex: 1; height: 1px; background: #c8c2b4; }
+        .samples-scroll { display: flex; gap: 10px; overflow-x: auto; padding-bottom: 4px; }
+        .samples-scroll::-webkit-scrollbar { height: 3px; }
+        .samples-scroll::-webkit-scrollbar-thumb { background: #c8c2b4; border-radius: 2px; }
+        .sample-pill {
+          flex-shrink: 0; display: flex; align-items: center; gap: 8px;
+          padding: 10px 16px; background: white; border: 1px solid #c8c2b4;
+          border-radius: 3px; cursor: pointer; transition: all .18s;
+          font-family: 'Outfit', sans-serif;
+        }
+        .sample-pill:hover { border-color: #1e5c2e; background: #f5faf6; transform: translateY(-1px); }
+        .sample-pill-icon { font-size: 14px; flex-shrink: 0; }
+        .sample-pill-body { display: flex; flex-direction: column; gap: 2px; }
+        .sample-pill-label { font-size: 12.5px; font-weight: 500; color: #0a0f0d; white-space: nowrap; }
+        .sample-pill-tag {
+          font-family: 'DM Mono', monospace; font-size: 8px; letter-spacing: .07em;
+          text-transform: uppercase; padding: 1px 5px; border-radius: 2px;
+          align-self: flex-start;
+        }
 
         /* ── UI TABS & UPLOAD ─────────────────────────── */
         .tabs-wrap { display: flex; border-bottom: 1px solid #c8c2b4; background: #faf8f3; }
@@ -799,8 +1073,24 @@ export default function AuditPage() {
           </p>
         </div>
 
+        {/* ── SAMPLE CASES STRIP ── */}
+        <div className="samples-section">
+          <div className="samples-eyebrow">Try a sample case</div>
+          <div className="samples-scroll">
+            {SAMPLE_CASES.map((s, i) => (
+              <button key={i} className="sample-pill" onClick={() => loadSample(s)}>
+                <span className="sample-pill-icon">{s.icon}</span>
+                <div className="sample-pill-body">
+                  <span className="sample-pill-label">{s.label}</span>
+                  <span className="sample-pill-tag" style={{ color: s.tagColor, background: s.tagBg }}>{s.tag}</span>
+                </div>
+              </button>
+            ))}
+          </div>
+        </div>
+
         {/* ── FORM ── */}
-        <div className="form-section">
+        <div className="form-section" id="audit-form">
           <div className="form-card" style={{ overflow: "hidden" }}>
             <div className="tabs-wrap">
               <button className={`tab-btn ${mode === "upload" ? "active" : ""}`} onClick={() => setMode("upload")}>
