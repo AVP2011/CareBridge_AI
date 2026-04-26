@@ -859,8 +859,8 @@ export default function AuditPage() {
   gap:22px;
   align-items:start;
 }
-        .results-main { display:flex;flex-direction:column;gap:14px; align-items:flex-start;   /*
-        .results-side { display: flex; flex-direction: column; gap: 14px; width: 288px; position: sticky; top: 96px; }
+        .results-main { display: flex; flex-direction: column; gap: 14px; align-items: stretch; min-width: 0; }
+        .results-side { display: flex; flex-direction: column; gap: 14px; width: 100%; position: sticky; top: 96px; }
 
         /* ── REPORT CARDS ─────────────────────────────── */
         .rcard { background: white; border: 1px solid #c8c2b4; border-radius: 4px; overflow: hidden; }
