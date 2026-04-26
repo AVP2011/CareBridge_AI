@@ -428,7 +428,6 @@ const SAMPLE_CASES = [
     tag: "Most Common",
     tagColor: "#8c1f14",
     tagBg: "#f5d0cc",
-    icon: "🟥",
     policy: `HEALTH INSURANCE POLICY — STANDARD INDIVIDUAL PLAN
 Sum Insured: ₹5,00,000 | Policy No: HI/2021/00441
 Policyholder: Rajesh Kumar | Inception Date: 12 March 2021
@@ -472,7 +471,6 @@ Treatment: IV fluids, Nephrology consult, started on dialysis support. Discharge
     tag: "Tricky",
     tagColor: "#7a4e08",
     tagBg: "#faecd0",
-    icon: "🟧",
     policy: `HEALTH INSURANCE POLICY — FAMILY FLOATER PLAN
 Sum Insured: ₹10,00,000 | Policy No: FF/2024/07712
 Policyholder: Priya Sharma | Inception Date: 01 November 2024
@@ -512,7 +510,6 @@ Recommendation: Laparoscopic Cholecystectomy (surgical removal of gallbladder) �
     tag: "Partial Rejection",
     tagColor: "#2d3a7a",
     tagBg: "#dce4f5",
-    icon: "⚫",
     policy: `HEALTH INSURANCE POLICY — INDIVIDUAL PLAN
 Sum Insured: ₹3,00,000 | Policy No: IND/2022/03310
 Policyholder: Amit Verma | Inception Date: 5 June 2022
@@ -558,7 +555,6 @@ Total Bill: ₹1,87,000`,
     tag: "Documentation",
     tagColor: "#1e5c2e",
     tagBg: "#d6eddc",
-    icon: "🟫",
     policy: `HEALTH INSURANCE POLICY — INDIVIDUAL PLAN
 Sum Insured: ₹5,00,000 | Policy No: HI/2020/09981
 Policyholder: Sunita Joshi | Inception Date: 22 January 2020
@@ -605,7 +601,6 @@ Note: Patient's family was in significant distress during admission and managing
     tag: "Combined",
     tagColor: "#4a1a7a",
     tagBg: "#ede4f5",
-    icon: "🟪",
     policy: `HEALTH INSURANCE POLICY — INDIVIDUAL PLAN
 Sum Insured: ₹7,50,000 | Policy No: IND/2023/11450
 Policyholder: Vikram Singh | Inception Date: 1 April 2023
@@ -780,34 +775,41 @@ export default function AuditPage() {
         @keyframes spin { to { transform: rotate(360deg) } }
         .err-msg { margin-top: 14px; padding: 12px 16px; background: #f5d0cc; border: 1px solid #e08070; border-radius: 2px; font-family: 'DM Mono', monospace; font-size: 11px; color: #8c1f14; }
 
-        /* ── SAMPLE CASES STRIP ───────────────────────────── */
+        /* ── SAMPLE CASES ──────────────────────────────────── */
         .samples-section {
-          max-width: 1160px; margin: 0 auto; padding: 28px 40px 0;
+          max-width: 1160px; margin: 0 auto; padding: 24px 40px 0;
         }
-        .samples-eyebrow {
+        .samples-hdr {
+          display: flex; align-items: center; justify-content: space-between;
+          margin-bottom: 10px;
+        }
+        .samples-label {
           font-family: 'DM Mono', monospace; font-size: 9px; letter-spacing: .16em;
-          text-transform: uppercase; color: #5a7060; margin-bottom: 12px;
-          display: flex; align-items: center; gap: 10px;
+          text-transform: uppercase; color: #5a7060;
         }
-        .samples-eyebrow::after { content: ''; flex: 1; height: 1px; background: #c8c2b4; }
-        .samples-scroll { display: flex; gap: 10px; overflow-x: auto; padding-bottom: 4px; }
-        .samples-scroll::-webkit-scrollbar { height: 3px; }
-        .samples-scroll::-webkit-scrollbar-thumb { background: #c8c2b4; border-radius: 2px; }
-        .sample-pill {
-          flex-shrink: 0; display: flex; align-items: center; gap: 8px;
-          padding: 10px 16px; background: white; border: 1px solid #c8c2b4;
-          border-radius: 3px; cursor: pointer; transition: all .18s;
-          font-family: 'Outfit', sans-serif;
+        .samples-hint {
+          font-family: 'DM Mono', monospace; font-size: 9px; color: #b0a898;
+          letter-spacing: .04em;
         }
-        .sample-pill:hover { border-color: #1e5c2e; background: #f5faf6; transform: translateY(-1px); }
-        .sample-pill-icon { font-size: 14px; flex-shrink: 0; }
-        .sample-pill-body { display: flex; flex-direction: column; gap: 2px; }
-        .sample-pill-label { font-size: 12.5px; font-weight: 500; color: #0a0f0d; white-space: nowrap; }
-        .sample-pill-tag {
+        .samples-table { background: white; border: 1px solid #c8c2b4; border-radius: 4px; overflow: hidden; }
+        .sample-row {
+          width: 100%; display: flex; align-items: center; gap: 14px;
+          padding: 11px 20px; background: none; border: none; border-bottom: 1px solid #f0ece3;
+          cursor: pointer; text-align: left; transition: background .15s;
+        }
+        .sample-row:last-child { border-bottom: none; }
+        .sample-row:hover { background: #faf8f3; }
+        .sample-idx {
+          font-family: 'DM Mono', monospace; font-size: 9px; color: #b0a898;
+          flex-shrink: 0; min-width: 18px;
+        }
+        .sample-name { font-size: 12.5px; font-weight: 500; color: #0a0f0d; flex: 1; text-align: left; }
+        .sample-tag {
           font-family: 'DM Mono', monospace; font-size: 8px; letter-spacing: .07em;
-          text-transform: uppercase; padding: 1px 5px; border-radius: 2px;
-          align-self: flex-start;
+          text-transform: uppercase; padding: 2px 7px; border-radius: 2px; flex-shrink: 0;
         }
+        .sample-arrow { font-size: 11px; color: #b0a898; flex-shrink: 0; transition: transform .15s; }
+        .sample-row:hover .sample-arrow { transform: translateX(2px); color: #1e5c2e; }
 
         /* ── UI TABS & UPLOAD ─────────────────────────── */
         .tabs-wrap { display: flex; border-bottom: 1px solid #c8c2b4; background: #faf8f3; }
@@ -1073,17 +1075,19 @@ export default function AuditPage() {
           </p>
         </div>
 
-        {/* ── SAMPLE CASES STRIP ── */}
+        {/* ── SAMPLE CASES ── */}
         <div className="samples-section">
-          <div className="samples-eyebrow">Try a sample case</div>
-          <div className="samples-scroll">
+          <div className="samples-hdr">
+            <span className="samples-label">Sample Test Cases</span>
+            <span className="samples-hint">Click any to auto-fill the form</span>
+          </div>
+          <div className="samples-table">
             {SAMPLE_CASES.map((s, i) => (
-              <button key={i} className="sample-pill" onClick={() => loadSample(s)}>
-                <span className="sample-pill-icon">{s.icon}</span>
-                <div className="sample-pill-body">
-                  <span className="sample-pill-label">{s.label}</span>
-                  <span className="sample-pill-tag" style={{ color: s.tagColor, background: s.tagBg }}>{s.tag}</span>
-                </div>
+              <button key={i} className="sample-row" onClick={() => loadSample(s)}>
+                <span className="sample-idx">{String(i + 1).padStart(2, "0")}</span>
+                <span className="sample-name">{s.label}</span>
+                <span className="sample-tag" style={{ color: s.tagColor, background: s.tagBg }}>{s.tag}</span>
+                <span className="sample-arrow">→</span>
               </button>
             ))}
           </div>
