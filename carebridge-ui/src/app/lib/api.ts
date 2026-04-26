@@ -29,6 +29,31 @@ export const analyzeRejection = async (payload: {
 };
 
 // --------------------------------------------------
+// Post-Rejection Audit — file upload
+// --------------------------------------------------
+export const analyzeRejectionFromFile = async (data: {
+  policy_file?: File;
+  rejection_file?: File;
+  medical_file?: File;
+  user_explanation?: string;
+}): Promise<AuditReport> => {
+  const formData = new FormData();
+
+  if (data.policy_file) formData.append("policy_file", data.policy_file);
+  if (data.rejection_file) formData.append("rejection_file", data.rejection_file);
+  if (data.medical_file) formData.append("medical_file", data.medical_file);
+  if (data.user_explanation) formData.append("user_explanation", data.user_explanation);
+
+  const response = await axios.post(`${BASE_URL}/audit/upload`, formData, {
+    headers: {
+      "ngrok-skip-browser-warning": "true"
+    },
+    timeout: 360_000,
+  });
+  return response.data;
+};
+
+// --------------------------------------------------
 // Pre-Purchase Analysis — text input
 // --------------------------------------------------
 export const analyzePolicy = async (

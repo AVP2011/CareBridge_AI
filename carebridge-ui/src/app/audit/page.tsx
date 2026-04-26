@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useRef, useEffect, useCallback } from "react";
-import { analyzeRejection } from "../lib/api";
+import { analyzeRejection, analyzeRejectionFromFile } from "../lib/api";
 import { AuditReport } from "../types/audit";
 import HelpSupport from "../components/audit/Helpsupport";
 
@@ -422,31 +422,54 @@ function buildOverturnList(r: AuditReport): string[] {
    MAIN PAGE
 ───────────────────────────────────────────────────────────────── */
 export default function AuditPage() {
+  const [mode, setMode]       = useState<"text" | "upload">("upload");
   const [policyText,      setPolicyText]      = useState("");
   const [rejectionText,   setRejectionText]   = useState("");
   const [medicalText,     setMedicalText]     = useState("");
   const [userExplanation, setUserExplanation] = useState("");
+  
+  const [policyFile,      setPolicyFile]      = useState<File | null>(null);
+  const [rejectionFile,   setRejectionFile]   = useState<File | null>(null);
+  const [medicalFile,     setMedicalFile]     = useState<File | null>(null);
+
   const [activeField,     setActiveField]     = useState<string | null>(null);
   const [report,  setReport]  = useState<AuditReport | null>(null);
   const [loading, setLoading] = useState(false);
   const [error,   setError]   = useState<string | null>(null);
 
   const handleAnalyze = async () => {
-    if (!policyText.trim() || !rejectionText.trim()) {
-      setError("Policy wording and rejection letter are required."); return;
+    if (mode === "text") {
+        if (!policyText.trim() || !rejectionText.trim()) {
+          setError("Policy wording and rejection letter are required in text mode."); return;
+        }
+    } else {
+        if (!policyFile || !rejectionFile) {
+          setError("Policy PDF and Rejection Letter are required in upload mode."); return;
+        }
     }
+    
     setLoading(true); setError(null); setReport(null);
     try {
-      const data = await analyzeRejection({
-        policy_text:            policyText,
-        rejection_text:         rejectionText,
-        medical_documents_text: medicalText,
-        user_explanation:       userExplanation,
-      });
+      let data;
+      if (mode === "text") {
+          data = await analyzeRejection({
+            policy_text:            policyText,
+            rejection_text:         rejectionText,
+            medical_documents_text: medicalText,
+            user_explanation:       userExplanation,
+          });
+      } else {
+          data = await analyzeRejectionFromFile({
+            policy_file:            policyFile || undefined,
+            rejection_file:         rejectionFile || undefined,
+            medical_file:           medicalFile || undefined,
+            user_explanation:       userExplanation,
+          });
+      }
       setReport(data);
       setTimeout(() => document.getElementById("audit-results")?.scrollIntoView({ behavior: "smooth" }), 120);
     } catch {
-      setError("Audit could not be processed. Ensure policy and rejection text are clear and complete.");
+      setError("Audit could not be processed. Ensure files are valid and under the size limit.");
     } finally { setLoading(false); }
   };
 
@@ -511,6 +534,23 @@ export default function AuditPage() {
         .spinner { width: 13px; height: 13px; border: 2px solid rgba(255,255,255,.3); border-top-color: white; border-radius: 50%; animation: spin .7s linear infinite; }
         @keyframes spin { to { transform: rotate(360deg) } }
         .err-msg { margin-top: 14px; padding: 12px 16px; background: #f5d0cc; border: 1px solid #e08070; border-radius: 2px; font-family: 'DM Mono', monospace; font-size: 11px; color: #8c1f14; }
+
+        /* ── UI TABS & UPLOAD ─────────────────────────── */
+        .tabs-wrap { display: flex; border-bottom: 1px solid #c8c2b4; background: #faf8f3; }
+        .tab-btn { flex: 1; padding: 14px; background: none; border: none; font-family: 'DM Mono', monospace; font-size: 11px; text-transform: uppercase; cursor: pointer; color: #5a7060; border-bottom: 2px solid transparent; transition: all .2s; }
+        .tab-btn:hover { background: #f0ece3; }
+        .tab-btn.active { color: #1e5c2e; border-bottom-color: #1e5c2e; font-weight: 600; background: white; }
+        .file-dropzone { border: 1px dashed #c8c2b4; border-radius: 4px; padding: 24px; text-align: center; cursor: pointer; background: #faf8f3; margin-bottom: 16px; transition: border-color .2s; }
+        .file-dropzone:last-of-type { margin-bottom: 0; }
+        .file-dropzone:hover { border-color: #1e5c2e; background: white; }
+        .dz-content { display: flex; align-items: center; justify-content: center; gap: 12px; }
+        .dz-icon { font-size: 18px; }
+        .dz-filename { font-size: 13px; color: #0a0f0d; font-family: 'DM Mono', monospace; font-weight: 500; max-width: 200px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+        .dz-remove { background: #f5d0cc; border: none; color: #8c1f14; padding: 4px 8px; font-size: 10px; border-radius: 2px; cursor: pointer; font-family: 'DM Mono', monospace; transition: background .2s; }
+        .dz-remove:hover { background: #e08070; color: white; }
+        .dz-text { font-size: 13px; color: #5a7060; }
+        .dz-req { background: #f5d0cc; color: #8c1f14; padding: 2px 6px; font-size: 9px; font-family: 'DM Mono', monospace; border-radius: 2px; }
+        .upload-panel { padding: 32px 40px 18px; }
 
         /* ── SIDEBAR ──────────────────────────────────── */
         .sidebar { display: flex; flex-direction: column; gap: 14px; }
@@ -761,32 +801,85 @@ export default function AuditPage() {
 
         {/* ── FORM ── */}
         <div className="form-section">
-          <div className="form-card">
-            {[
-              { id: "policy",    label: "Policy Wording",         req: true,  rows: 7, ph: "Paste the relevant sections of your policy document...",             val: policyText,      set: setPolicyText },
-              { id: "rejection", label: "Rejection Letter",        req: true,  rows: 6, ph: "Paste the insurer's rejection letter or claim repudiation notice...", val: rejectionText,   set: setRejectionText },
-              { id: "medical",   label: "Medical Records Summary", req: false, rows: 5, ph: "Paste discharge summary, diagnosis, treatment dates, doctor notes...", val: medicalText,     set: setMedicalText },
-              { id: "context",   label: "Your Explanation",        req: false, rows: 4, ph: "When diagnosed, when policy purchased, any prior communications...",  val: userExplanation, set: setUserExplanation },
-            ].map((f, i) => (
-              <div key={f.id} className={`field-row${activeField === f.id ? " active" : ""}`}>
-                <div className="field-header" onClick={() => setActiveField(activeField === f.id ? null : f.id)}>
-                  <div className="field-label-wrap">
-                    <span className="field-num">{String(i + 1).padStart(2, "0")}</span>
-                    <span className="field-label">{f.label}</span>
-                    <span className={f.req ? "field-req" : "field-opt"}>{f.req ? "Required" : "Optional"}</span>
-                  </div>
-                  {f.val.trim() && <span className="field-status">✓ {f.val.trim().length} chars</span>}
-                </div>
-                {(activeField === f.id || (f.req && !f.val)) && (
-                  <div className="field-body">
-                    <textarea rows={f.rows} placeholder={f.ph} value={f.val}
-                      onChange={e => f.set(e.target.value)}
-                      onFocus={() => setActiveField(f.id)}
+          <div className="form-card" style={{ overflow: "hidden" }}>
+            <div className="tabs-wrap">
+              <button className={`tab-btn ${mode === "upload" ? "active" : ""}`} onClick={() => setMode("upload")}>
+                Upload Documents
+              </button>
+              <button className={`tab-btn ${mode === "text" ? "active" : ""}`} onClick={() => setMode("text")}>
+                Paste Text
+              </button>
+            </div>
+
+            {mode === "upload" ? (
+              <div className="upload-panel">
+                {[
+                  { label: "Policy Document PDF", file: policyFile, setFile: setPolicyFile, req: true, accept: "application/pdf" },
+                  { label: "Rejection Letter (PDF/IMG)", file: rejectionFile, setFile: setRejectionFile, req: true, accept: "application/pdf,image/*" },
+                  { label: "Medical Records (PDF)", file: medicalFile, setFile: setMedicalFile, req: false, accept: "application/pdf" },
+                ].map((fz, i) => (
+                  <div key={i} className="file-dropzone" onClick={() => document.getElementById(`dz-${i}`)?.click()}>
+                    <input id={`dz-${i}`} type="file" accept={fz.accept} style={{ display: 'none' }} 
+                      onChange={e => {
+                        const file = e.target.files?.[0];
+                        if (file) fz.setFile(file);
+                      }} 
                     />
+                    <div className="dz-content">
+                      {fz.file ? (
+                        <>
+                          <span className="dz-icon">📄</span>
+                          <span className="dz-filename" title={fz.file.name}>{fz.file.name}</span>
+                          <button className="dz-remove" onClick={(e) => { e.stopPropagation(); fz.setFile(null); }}>✕ Remove</button>
+                        </>
+                      ) : (
+                        <>
+                          <span className="dz-icon">☁️</span>
+                          <span className="dz-text">Click to upload {fz.label}</span>
+                          {fz.req && <span className="dz-req">Required</span>}
+                        </>
+                      )}
+                    </div>
                   </div>
-                )}
+                ))}
+                
+                <div style={{ marginTop: '24px' }}>
+                  <div className="field-label-wrap" style={{ marginBottom: "12px" }}>
+                    <span className="field-label">Additional Context</span>
+                    <span className="field-opt">Optional</span>
+                  </div>
+                  <textarea rows={4} placeholder="When diagnosed, when policy purchased, any prior communications..." value={userExplanation} onChange={e => setUserExplanation(e.target.value)} />
+                </div>
               </div>
-            ))}
+            ) : (
+              <div>
+                {[
+                  { id: "policy",    label: "Policy Wording",         req: true,  rows: 7, ph: "Paste the relevant sections of your policy document...",             val: policyText,      set: setPolicyText },
+                  { id: "rejection", label: "Rejection Letter",        req: true,  rows: 6, ph: "Paste the insurer's rejection letter or claim repudiation notice...", val: rejectionText,   set: setRejectionText },
+                  { id: "medical",   label: "Medical Records Summary", req: false, rows: 5, ph: "Paste discharge summary, diagnosis, treatment dates, doctor notes...", val: medicalText,     set: setMedicalText },
+                  { id: "context",   label: "Your Explanation",        req: false, rows: 4, ph: "When diagnosed, when policy purchased, any prior communications...",  val: userExplanation, set: setUserExplanation },
+                ].map((f, i) => (
+                  <div key={f.id} className={`field-row${activeField === f.id ? " active" : ""}`}>
+                    <div className="field-header" onClick={() => setActiveField(activeField === f.id ? null : f.id)}>
+                      <div className="field-label-wrap">
+                        <span className="field-num">{String(i + 1).padStart(2, "0")}</span>
+                        <span className="field-label">{f.label}</span>
+                        <span className={f.req ? "field-req" : "field-opt"}>{f.req ? "Required" : "Optional"}</span>
+                      </div>
+                      {f.val.trim() && <span className="field-status">✓ {f.val.trim().length} chars</span>}
+                    </div>
+                    {((activeField === f.id) || (f.req && !f.val)) && (
+                      <div className="field-body">
+                        <textarea rows={f.rows} placeholder={f.ph} value={f.val}
+                          onChange={e => f.set(e.target.value)}
+                          onFocus={() => setActiveField(f.id)}
+                        />
+                      </div>
+                    )}
+                  </div>
+                ))}
+              </div>
+            )}
             <div className="form-footer">
               <button className="run-btn" onClick={handleAnalyze} disabled={loading}>
                 {loading ? <><span className="spinner" />Running audit...</> : "Run Claim Audit"}
@@ -851,7 +944,7 @@ export default function AuditPage() {
                 {/* APPEAL DIRECTION INDICATOR */}
                 <div className="rcard">
                   <div className="rcard-hdr">
-                    <span className="rcard-title">Appeal Direction Indicator</span>
+                    <span className="rcard-title">Status & Verdict</span>
                     <span className="rcard-title" style={{ color: appealCfg?.color }}>
                       {report.appeal_strength.label}
                     </span>
@@ -894,7 +987,7 @@ export default function AuditPage() {
                 {/* CLAUSE ANALYSIS */}
                 <div className="rcard">
                   <div className="rcard-hdr">
-                    <span className="rcard-title">Clause Analysis</span>
+                    <span className="rcard-title">Why Rejected (Policy vs Claim Gap)</span>
                     <span className="align-badge" style={{
                       background: alignCfg?.bg,
                       color:      alignCfg?.color,
@@ -929,7 +1022,7 @@ export default function AuditPage() {
 
                 {/* CASE ASSESSMENT */}
                 <div className="rcard">
-                  <div className="rcard-hdr"><span className="rcard-title">Case Assessment</span></div>
+                  <div className="rcard-hdr"><span className="rcard-title">Case Assessment & Missing Documents</span></div>
                   <div className="points-grid">
                     <div className="points-col">
                       <div className="points-col-label" style={{ color: "#1e5c2e" }}>Points in your favour</div>
@@ -957,7 +1050,7 @@ export default function AuditPage() {
                 {report.reapplication_possible && report.reapplication_steps?.length > 0 && (
                   <div className="rcard">
                     <div className="rcard-hdr">
-                      <span className="rcard-title">Reapplication Steps</span>
+                      <span className="rcard-title">What You Should Do Next</span>
                       <span className="rcard-title" style={{ color: "#1e5c2e" }}>
                         {report.reapplication_steps.length} actions
                       </span>

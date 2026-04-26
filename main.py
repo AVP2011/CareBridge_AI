@@ -139,22 +139,21 @@ def report_chat(request: ReportChatRequest):
 
 
 # --------------------------------------------------
-# File Upload Analysis
+# File Upload Helpers
 # --------------------------------------------------
 
 from fastapi import Form
 
-@app.post("/prepurchase/upload")
-async def prepurchase_upload(
-    file: UploadFile = File(...),
-    agent_summary: str = Form(None)
-):
+async def _extract_file(file: UploadFile) -> str:
+    if file is None or file.filename == "":
+        return ""
+
     try:
         content = await file.read()
         extracted_text = ""
 
         # Safe extraction for PDFs using RobustPDFExtractor
-        if file.content_type == "application/pdf" or file.filename.endswith(".pdf"):
+        if file.content_type == "application/pdf" or file.filename.lower().endswith(".pdf"):
             import uuid
             import os
             temp_file_path = f"tmp_{uuid.uuid4()}.pdf"
@@ -163,11 +162,11 @@ async def prepurchase_upload(
             
             try:
                 from services.pdf_extractor_robust import RobustPDFExtractor
-                extractor = RobustPDFExtractor()
+                extractor = RobustPDFExtractor(enable_ocr=True) # Enforcing OCR per user instructions
                 extracted_text, method = extractor.extract_text(temp_file_path)
-                print(f"✅ Extracted via {method}")
+                print(f"✅ Extracted {file.filename} via {method}")
             except Exception as e:
-                print(f"⚠️ Robust extraction failed: {e}")
+                print(f"⚠️ Robust extraction failed for {file.filename}: {e}")
                 # Fallback to simple
                 with pdfplumber.open(io.BytesIO(content)) as pdf:
                     for page in pdf.pages:
@@ -179,14 +178,30 @@ async def prepurchase_upload(
                     os.remove(temp_file_path)
 
         elif file.content_type.startswith("image/") or file.filename.lower().endswith((".png", ".jpg", ".jpeg")):
-            import io
-            from PIL import Image
-            import pytesseract
             image = Image.open(io.BytesIO(content))
             extracted_text = pytesseract.image_to_string(image)
+            print(f"✅ Extracted {file.filename} via OCR Image")
 
         else:
             extracted_text = content.decode("utf-8", errors="ignore")
+
+        return extracted_text
+
+    except Exception as e:
+        print(f"⚠️ Extraction error for {file.filename}: {e}")
+        return ""
+
+# --------------------------------------------------
+# Pre-Purchase File Upload Analysis
+# --------------------------------------------------
+
+@app.post("/prepurchase/upload")
+async def prepurchase_upload(
+    file: UploadFile = File(...),
+    agent_summary: str = Form(None)
+):
+    try:
+        extracted_text = await _extract_file(file)
 
         if not extracted_text.strip() or len(extracted_text) < 100:
             raise HTTPException(
@@ -206,6 +221,58 @@ async def prepurchase_upload(
     except Exception as e:
         print("⚠️ /prepurchase/upload error:", e)
         raise HTTPException(500, "File processing failed.")
+
+
+# --------------------------------------------------
+# Audit Rejection File Upload Analysis
+# --------------------------------------------------
+
+def _compress_audit_report(report_dict: dict) -> dict:
+    # Compressing output per user instructions to avoid overwhelming the frontend
+    if "weak_points" in report_dict and isinstance(report_dict["weak_points"], list):
+        report_dict["weak_points"] = report_dict["weak_points"][:3]
+    if "strong_points" in report_dict and isinstance(report_dict["strong_points"], list):
+        report_dict["strong_points"] = report_dict["strong_points"][:3]
+    if "reapplication_steps" in report_dict and isinstance(report_dict["reapplication_steps"], list):
+        report_dict["reapplication_steps"] = report_dict["reapplication_steps"][:3]
+    return report_dict
+
+@app.post("/audit/upload")
+async def analyze_audit_upload(
+    policy_file: UploadFile = File(None),
+    rejection_file: UploadFile = File(None),
+    medical_file: UploadFile = File(None),
+    user_explanation: str = Form(None)
+):
+    try:
+        policy_text = await _extract_file(policy_file)
+        rejection_text = await _extract_file(rejection_file)
+        medical_text = await _extract_file(medical_file)
+
+        if not policy_text.strip() and not rejection_text.strip():
+             raise HTTPException(status_code=422, detail="Both Policy and Rejection Letter are required.")
+
+        combined_input = {
+            "policy_text": policy_text,
+            "rejection_text": rejection_text,
+            "medical_documents_text": medical_text,
+            "user_explanation": user_explanation
+        }
+
+        # Structure input matching schemas/request.py PostRejectionRequest
+        request_obj = PostRejectionRequest(**combined_input)
+        
+        result_model = _engines["post_rejection"].run(request_obj)
+        report_data = result_model.model_dump()
+        
+        return _compress_audit_report(report_data)
+
+    except HTTPException:
+        raise
+    except Exception as e:
+        print("⚠️ /audit/upload error:", e)
+        raise HTTPException(500, "Audit upload failed.")
+
 
 
 # --------------------------------------------------
