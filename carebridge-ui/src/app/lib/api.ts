@@ -55,7 +55,12 @@ export const analyzePolicyFromFile = async (
   formData.append("file", file);
   if (agentSummary) formData.append("agent_summary", agentSummary);
 
-  const response = await API.post("/prepurchase/upload", formData);
+  const response = await axios.post(`${BASE_URL}/prepurchase/upload`, formData, {
+    headers: {
+      "ngrok-skip-browser-warning": "true"
+    },
+    timeout: 360_000,
+  });
   return response.data;
 };
 
