@@ -477,22 +477,22 @@ export default function Home(): React.ReactElement {
         .stat-cell:hover::before { height: 100%; }
 
         .stat-number {
-          font-family: 'Cormorant Garamond', serif;
-          font-size: 56px;
-          font-weight: 500;
+          font-family: 'Outfit', sans-serif;
+          font-size: 52px;
+          font-weight: 300;
           color: #ddeee2;
           line-height: 1;
-          letter-spacing: -0.02em;
+          letter-spacing: -0.03em;
         }
 
         .stat-label {
           font-family: 'DM Mono', monospace;
-          font-size: 9.5px;
-          font-weight: 400;
-          letter-spacing: 0.13em;
+          font-size: 10px;
+          font-weight: 500;
+          letter-spacing: 0.15em;
           text-transform: uppercase;
-          color: rgba(255,255,255,0.3);
-          margin-top: 12px;
+          color: rgba(255,255,255,0.4);
+          margin-top: 14px;
           line-height: 1.5;
         }
 
@@ -1335,7 +1335,7 @@ export default function Home(): React.ReactElement {
                 { n: "10", l: "Clause categories" },
                 { n: "7", l: "IRDAI markers" },
                 { n: "48h", l: "Max PED wait detected" },
-                { n: "4B", l: "Parameter model" },
+                { n: "2B 2", l: "Parameter model" },
               ].map((s, i) => (
                 <div key={i} className="stat-cell">
                   <div className="stat-number">{s.n}</div>
