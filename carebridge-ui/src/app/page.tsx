@@ -1334,7 +1334,7 @@ export default function Home(): React.ReactElement {
               {[
                 { n: "10", l: "Clause categories" },
                 { n: "7", l: "IRDAI markers" },
-                { n: "48h", l: "Max PED wait detected" },
+                { n: "48m", l: "Max PED wait detected" },
                 { n: "2B 2", l: "Parameter model" },
               ].map((s, i) => (
                 <div key={i} className="stat-cell">
@@ -1501,7 +1501,7 @@ export default function Home(): React.ReactElement {
               },
               {
                 n: "02",
-                title: "IRDAI IGMS",
+                title: "Bima Bharosa",
                 desc: "Escalate to IRDAI portal if insurer doesn't respond.",
               },
               {
@@ -1526,11 +1526,11 @@ export default function Home(): React.ReactElement {
           <div className="help-orgs">
             {[
               {
-                name: "IRDAI IGMS",
+                name: "Bima Bharosa",
                 type: "Regulator",
                 desc: "Official complaint portal. 15-day response mandate.",
-                action: "igms.irda.gov.in",
-                url: "https://igms.irda.gov.in/",
+                action: "bimabharosa.irdai.gov.in",
+                url: "https://bimabharosa.irdai.gov.in/",
                 color: "#1e5c2e",
                 bg: "#d6eddc",
               },
@@ -1556,8 +1556,8 @@ export default function Home(): React.ReactElement {
                 name: "Consumer Forum",
                 type: "Legal",
                 desc: "CPA 2019 covers insurance. Online filing. No advocate.",
-                action: "edaakhil.nic.in",
-                url: "https://edaakhil.nic.in/",
+                action: "ncdrc.nic.in",
+                url: "https://ncdrc.nic.in/",
                 color: "#6a3a10",
                 bg: "#f0deca",
               },
