@@ -55,8 +55,45 @@ It helps policyholders:
 - Ombudsman & legal aid resources  
 
 ---
+## 🏗️ System Design
 
-## 🧠 Hybrid AI Architecture
+CareBridge AI architecture is built for high-precision regulatory analysis using a **Hybrid Intelligence** approach that combines Large Language Models with deterministic rule engines.
 
-CareBridge uses a **multi-layer intelligence pipeline**:
-****
+### 🧩 High-Level Architecture
+
+```mermaid
+graph TD
+    User((User)) -->|Upload Documents| Frontend[Next.js Frontend]
+    Frontend -->|REST API| Backend[FastAPI Backend]
+    
+    subgraph "Inference Engine"
+        Backend -->|Process| Pipeline[8-Step Pipeline]
+        Pipeline -->|Text Extraction| OCR[OCR / Robust PDF Extractor]
+        Pipeline -->|Augment| RAG[Hybrid RAG Layer]
+        RAG -->|Vectors| FAISS[(FAISS Index)]
+        Pipeline -->|Refine| Rules[Deterministic Rule Engines]
+        Pipeline -->|Inference| LLM[Gemma-2 2B-IT 4-bit]
+    end
+    
+    LLM -->|JSON Report| Rules
+    Rules -->|Structured Analysis| Backend
+    Backend -->|JSON Response| Frontend
+```
+
+### 🛠️ Technology Stack
+- **Frontend:** Next.js 14, React, TypeScript, Tailwind CSS
+- **Backend:** Python 3.11, FastAPI, Uvicorn
+- **AI/ML:** Google Gemma-2 2B-IT (4-bit NF4 quantized via bitsandbytes)
+- **Vector DB:** FAISS (Facebook AI Similarity Search)
+- **Embeddings:** sentence-transformers (all-MiniLM-L6-v2)
+- **OCR & PDF:** pytesseract, pdfplumber, pdf2image
+
+### 🧠 Strategic Intelligence
+1. **Smart 3-Point Sampling:** Efficiently analyzes 80+ page policies by sampling critical sections (Head, Middle, Tail) to overcome LLM context window limits.
+2. **Deterministic Overrides:** Regex-based rule engines validate and correct LLM outputs for high-stakes regulatory clauses (e.g., waiting periods, moratorium rules).
+3. **Regulatory Grounding:** RAG-driven retrieval from real IRDAI (Insurance Regulatory and Development Authority of India) circulars ensures fact-based analysis.
+
+---
+
+## 📜 Detailed Documentation
+For a full technical breakdown, including functional requirements, API specifications, and data flow diagrams, refer to the [SRS Document](./SRS.md).

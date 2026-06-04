@@ -1,10 +1,10 @@
-# Core ML & Framework
+# ─── Core API Framework ───────────────────────────────────────────
 fastapi>=0.115.0
 uvicorn>=0.30.0
 pydantic>=2.10.0
 python-multipart>=0.0.12
 
-# AI Engines (Relaxed for Kaggle compatibility)
+# ─── AI / ML Stack ────────────────────────────────────────────────
 torch
 transformers>=4.45.0
 accelerate>=1.0.0
@@ -12,19 +12,23 @@ bitsandbytes>=0.45.0
 sentence-transformers>=3.0.0
 faiss-cpu>=1.8.0
 
-# Document Processing & OCR
+# ─── Document Processing ──────────────────────────────────────────
+PyMuPDF>=1.24.0
 pdfplumber>=0.11.0
-pytesseract>=0.3.10
-pdf2image>=1.17.0
 PyPDF2>=3.0.0
 python-docx>=1.1.0
 
-# Utilities
+# ─── OCR Stack ────────────────────────────────────────────────────
+pytesseract>=0.3.10
+pdf2image>=1.17.0
+opencv-python-headless>=4.9.0
+Pillow>=10.4.0
+
+# ─── Utilities ────────────────────────────────────────────────────
 huggingface_hub>=0.25.0
 hf_transfer>=0.1.8
 pyngrok>=7.1.0
 requests>=2.32.0
-pillow>=10.4.0
 tqdm>=4.66.0
 numpy>=1.26.0
 scipy>=1.13.0
