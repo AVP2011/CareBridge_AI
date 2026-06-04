@@ -132,19 +132,19 @@ export default function HomepageHelp() {
           {/* 3 quick action cards */}
           <div className="hp-help-quick">
             <a
-              href="https://igms.irda.gov.in/"
-              target="_blank" rel="noopener noreferrer"
+              href="https://bimabharosa.irdai.gov.in/"
+              target="_blank"
+              rel="noopener noreferrer"
               className="hp-help-action"
             >
-              <div className="hp-action-icon">⊛</div>
-              <span className="hp-action-label" style={{ color: "#2d6b3e" }}>Step 1</span>
-              <div className="hp-action-title">File with IRDAI IGMS</div>
+              <div className="hp-action-icon">🏛️</div>
+              <div className="hp-action-title">File with Bima Bharosa</div>
               <p className="hp-action-desc">
-                Official complaint portal. Insurers must respond within 15 days.
-                Creates a legal paper trail for escalation.
+                Official IRDAI complaint portal. 15-day maximum turnaround limit
+                for insurers.
               </p>
               <div className="hp-action-link" style={{ color: "#2d5a3d" }}>
-                igms.irda.gov.in <span className="hp-action-arrow">↗</span>
+                bimabharosa.irdai.gov.in <span className="hp-action-arrow">↗</span>
               </div>
             </a>
 

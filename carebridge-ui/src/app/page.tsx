@@ -801,19 +801,19 @@ export default function Home(): React.ReactElement {
         }
 
         .help-eyebrow {
-          font-family: 'DM Mono', monospace;
-          font-size: 10.5px;
-          font-weight: 500;
-          letter-spacing: 0.2em;
+          font-family: 'Outfit', sans-serif;
+          font-size: 11px;
+          font-weight: 600;
+          letter-spacing: 0.12em;
           text-transform: uppercase;
-          color: var(--mist2);
+          color: var(--sage);
           margin-bottom: 14px;
         }
 
         .help-title {
-          font-family: 'Cormorant Garamond', serif;
+          font-family: 'Outfit', sans-serif;
           font-size: clamp(32px, 3.2vw, 48px);
-          font-weight: 500;
+          font-weight: 600;
           line-height: 1.08;
           color: var(--ink);
           letter-spacing: -0.01em;
@@ -874,12 +874,12 @@ export default function Home(): React.ReactElement {
         }
 
         .help-hl-label {
-          font-family: 'DM Mono', monospace;
-          font-size: 9.5px;
-          font-weight: 500;
-          letter-spacing: 0.15em;
+          font-family: 'Outfit', sans-serif;
+          font-size: 10px;
+          font-weight: 600;
+          letter-spacing: 0.12em;
           text-transform: uppercase;
-          color: rgba(255,255,255,0.25);
+          color: rgba(255,255,255,0.3);
           flex-shrink: 0;
           margin-right: 36px;
         }
@@ -899,20 +899,20 @@ export default function Home(): React.ReactElement {
         .help-hl-item:hover { opacity: 0.85; }
 
         .help-hl-name {
-          font-family: 'DM Mono', monospace;
-          font-size: 8.5px;
-          font-weight: 400;
-          letter-spacing: 0.12em;
+          font-family: 'Outfit', sans-serif;
+          font-size: 10px;
+          font-weight: 600;
+          letter-spacing: 0.08em;
           text-transform: uppercase;
-          color: rgba(255,255,255,0.28);
+          color: rgba(255,255,255,0.4);
         }
 
         .help-hl-num {
-          font-family: 'Cormorant Garamond', serif;
-          font-size: 20px;
+          font-family: 'Outfit', sans-serif;
+          font-size: 22px;
           font-weight: 500;
           color: #cce8d5;
-          letter-spacing: 0.02em;
+          letter-spacing: -0.01em;
         }
 
         /* Step cards */
@@ -961,11 +961,12 @@ export default function Home(): React.ReactElement {
         }
 
         .help-step-title {
-          font-family: 'Cormorant Garamond', serif;
-          font-size: 17px;
-          font-weight: 500;
+          font-family: 'Outfit', sans-serif;
+          font-size: 18px;
+          font-weight: 600;
           color: var(--ink);
-          line-height: 1.25;
+          line-height: 1.3;
+          letter-spacing: -0.01em;
         }
 
         .help-step-desc {
@@ -1070,10 +1071,10 @@ export default function Home(): React.ReactElement {
         }
 
         .help-orgs-link {
-          font-family: 'DM Mono', monospace;
-          font-size: 10px;
-          font-weight: 500;
-          letter-spacing: 0.13em;
+          font-family: 'Outfit', sans-serif;
+          font-size: 11px;
+          font-weight: 600;
+          letter-spacing: 0.08em;
           text-transform: uppercase;
           color: var(--sage);
           text-decoration: none;

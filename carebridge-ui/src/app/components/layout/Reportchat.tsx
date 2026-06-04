@@ -134,13 +134,13 @@ function buildLocalAnswer(question: string, report: ReportData, context: string)
     return "The IRDAI 8-year moratorium rule means that after 8 continuous years on any health policy, the insurer cannot reject a claim citing pre-existing disease — even if the condition was not disclosed. If your policy (or its portable predecessor) is 8+ years old, this is your strongest legal argument.";
   }
 
-  if (q.includes("next step") || q.includes("what should i do") || q.includes("how do i") || q.includes("what to do")) {
-    const s = steps.length ? steps.slice(0,3).map((t,i) => `${i+1}. ${t}`).join(" ") : "1. File written complaint with insurer GRO. 2. Escalate to IRDAI IGMS if no response in 15 days. 3. Approach Insurance Ombudsman within 1 year.";
-    return `${s} Time limits are strict — the Ombudsman must be approached within 1 year of the insurer's final reply.`;
+  if (q.includes("step") || q.includes("process") || q.includes("next")) {
+    const s = steps.length ? steps.slice(0,3).map((t,i) => `${i+1}. ${t}`).join(" ") : "1. File written complaint with insurer GRO. 2. Escalate to Bima Bharosa if no response in 15 days. 3. Approach Insurance Ombudsman within 1 year.";
+    return s + " Need help writing the complaint? Use our escalation tool.";
   }
 
-  if (q.includes("ombudsman") || q.includes("escalat") || q.includes("complain") || q.includes("igms")) {
-    return "File with IRDAI IGMS first (igms.irda.gov.in). If unresolved in 30 days, approach the Insurance Ombudsman (cioins.co.in). Eligibility: claims up to ₹50 lakhs, file within 1 year of final reply. The process is free and binding on the insurer.";
+  if (q.includes("ombudsman") || q.includes("escalat") || q.includes("complain") || q.includes("igms") || q.includes("bharosa")) {
+    return "File with Bima Bharosa first (bimabharosa.irdai.gov.in). If unresolved in 30 days, approach the Insurance Ombudsman (cioins.co.in). Eligibility: claims up to ₹50 lakhs, file within 1 year of final reply. The process is free and binding on the insurer.";
   }
 
   if (q.includes("document") || q.includes("what do i need") || q.includes("what to bring")) {

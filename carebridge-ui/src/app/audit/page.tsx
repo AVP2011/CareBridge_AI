@@ -262,6 +262,45 @@ function ReportChat({ report }: { report: AuditReport }) {
   );
 }
 
+function VerdictSection({ report: r }: { report: any }) {
+  const isStrong = r.appeal_strength.percentage >= 70;
+  const isWeak   = r.appeal_strength.percentage < 40;
+  
+  const riskColor = r.risk_data?.risk_level === "High" ? "#8c1f14" : r.risk_data?.risk_level === "Medium" ? "#7a4e08" : "#1e5c2e";
+
+  return (
+    <div className="verdict-grid">
+      <div className="v-card">
+        <div className="v-eyebrow">Authoritative Verdict</div>
+        <div className={`v-main v-verdict ${isStrong ? 'payable' : isWeak ? 'unlikely' : ''}`}>
+          {isStrong ? "Highly Appealable" : isWeak ? "Likely Correct" : "Grounds for Appeal"}
+        </div>
+        <div className="v-sub">
+          {isStrong ? "The insurer's grounds appear weak. A formal appeal is strongly recommended." : 
+           isWeak ? "The rejection appears to align with policy terms. Focus on moratorium if applicable." :
+           "Specific documentation gaps were found that could tilt the case in your favour."}
+        </div>
+      </div>
+
+      <div className="v-card v-risk">
+        <div className="v-eyebrow">Misrepresentation Risk</div>
+        <div className="v-main" style={{ color: riskColor }}>
+          {r.risk_data?.risk_level || "Not Calculated"}
+        </div>
+        <div className="v-risk-meter">
+          <div className="v-risk-fill" style={{ 
+            width: `${(r.risk_data?.risk_score || 0) * 100}%`,
+            backgroundColor: riskColor 
+          }} />
+        </div>
+        <div className="v-sub" style={{ color: "#5a7060" }}>
+          {r.risk_data?.action || "No immediate misrepresentation detected."}
+        </div>
+      </div>
+    </div>
+  );
+}
+
 /* ─────────────────────────────────────────────────────────────────
    DEEP ANALYSIS — 4 accordion sections
 ───────────────────────────────────────────────────────────────── */
@@ -731,10 +770,16 @@ export default function AuditPage() {
           display: flex; justify-content: space-between; align-items: flex-end;
           border-bottom: 1px solid #c8c2b4; gap: 32px;
         }
-        .page-eyebrow { font-family: 'DM Mono', monospace; font-size: 10px; letter-spacing: .18em; text-transform: uppercase; color: #5a7060; margin-bottom: 12px; }
-        .page-title   { font-family: 'Cormorant Garamond', serif; font-size: clamp(34px,3.5vw,50px); font-weight: 500; line-height: 1.08; color: #0a0f0d; }
-        .page-title em { font-style: italic; color: #1e5c2e; }
-        .page-sub { font-size: 13px; color: #3a4038; max-width: 360px; line-height: 1.75; text-align: right; }
+        .page-eyebrow {
+          font-family: 'Outfit', sans-serif; font-size: 11px; font-weight: 600;
+          letter-spacing: 0.12em; text-transform: uppercase; color: #5a7060; margin-bottom: 12px;
+        }
+        .page-title {
+          font-family: 'Outfit', sans-serif; font-size: clamp(34px,3.5vw,50px);
+          font-weight: 600; line-height: 1.08; color: #0a0f0d; letter-spacing: -0.015em;
+        }
+        .page-title em { font-style: italic; color: #1e5c2e; font-weight: 400; }
+        .page-sub { font-size: 13.5px; color: #3a4038; max-width: 380px; line-height: 1.8; text-align: right; }
 
         /* ── FORM ─────────────────────────────────────── */
         .form-section {
@@ -747,11 +792,11 @@ export default function AuditPage() {
         .field-row.active { background: #faf7f2; }
         .field-header { padding: 16px 24px; display: flex; justify-content: space-between; align-items: center; cursor: pointer; gap: 12px; }
         .field-label-wrap { display: flex; align-items: center; gap: 12px; min-width: 0; }
-        .field-num   { font-family: 'DM Mono', monospace; font-size: 10px; color: #5a7060; letter-spacing: .06em; flex-shrink: 0; }
-        .field-label { font-size: 14px; font-weight: 500; color: #0a0f0d; }
-        .field-req   { font-family: 'DM Mono', monospace; font-size: 8px; letter-spacing: .1em; text-transform: uppercase; color: #8c1f14; background: #f5d0cc; padding: 2px 7px; border-radius: 2px; flex-shrink: 0; }
-        .field-opt   { font-family: 'DM Mono', monospace; font-size: 8px; letter-spacing: .1em; text-transform: uppercase; color: #5a7060; background: #e8e3d8; padding: 2px 7px; border-radius: 2px; flex-shrink: 0; }
-        .field-status { font-family: 'DM Mono', monospace; font-size: 10px; color: #1e5c2e; flex-shrink: 0; }
+        .field-num   { font-family: 'Outfit', sans-serif; font-size: 10.5px; font-weight: 600; color: #5a7060; letter-spacing: .08em; flex-shrink: 0; }
+        .field-label { font-size: 14.5px; font-weight: 600; color: #0a0f0d; }
+        .field-req   { font-family: 'Outfit', sans-serif; font-size: 8.5px; font-weight: 600; letter-spacing: .06em; text-transform: uppercase; color: #8c1f14; background: #f5d0cc; padding: 3px 8px; border-radius: 2px; flex-shrink: 0; }
+        .field-opt   { font-family: 'Outfit', sans-serif; font-size: 8.5px; font-weight: 600; letter-spacing: .06em; text-transform: uppercase; color: #5a7060; background: #e8e3d8; padding: 3px 8px; border-radius: 2px; flex-shrink: 0; }
+        .field-status { font-family: 'Outfit', sans-serif; font-size: 11px; font-weight: 500; color: #1e5c2e; flex-shrink: 0; }
         .field-body { padding: 0 24px 18px; }
         textarea {
           width: 100%; padding: 14px 16px; resize: vertical;
@@ -765,7 +810,7 @@ export default function AuditPage() {
         .run-btn {
           width: 100%; padding: 16px; background: #1e5c2e; color: #e8f0ea;
           border: none; border-radius: 2px;
-          font-family: 'DM Mono', monospace; font-size: 11px; letter-spacing: .14em; text-transform: uppercase;
+          font-family: 'Outfit', sans-serif; font-size: 11.5px; font-weight: 600; letter-spacing: .08em; text-transform: uppercase;
           cursor: pointer; transition: background .2s;
           display: flex; align-items: center; justify-content: center; gap: 10px;
         }
@@ -784,12 +829,12 @@ export default function AuditPage() {
           margin-bottom: 10px;
         }
         .samples-label {
-          font-family: 'DM Mono', monospace; font-size: 9px; letter-spacing: .16em;
+          font-family: 'Outfit', sans-serif; font-size: 10px; font-weight: 600; letter-spacing: .08em;
           text-transform: uppercase; color: #5a7060;
         }
         .samples-hint {
-          font-family: 'DM Mono', monospace; font-size: 9px; color: #b0a898;
-          letter-spacing: .04em;
+          font-family: 'Outfit', sans-serif; font-size: 10px; font-weight: 500; color: #b0a898;
+          letter-spacing: .02em;
         }
         .samples-table { background: white; border: 1px solid #c8c2b4; border-radius: 4px; overflow: hidden; }
         .sample-row {
@@ -813,9 +858,9 @@ export default function AuditPage() {
 
         /* ── UI TABS & UPLOAD ─────────────────────────── */
         .tabs-wrap { display: flex; border-bottom: 1px solid #c8c2b4; background: #faf8f3; }
-        .tab-btn { flex: 1; padding: 14px; background: none; border: none; font-family: 'DM Mono', monospace; font-size: 11px; text-transform: uppercase; cursor: pointer; color: #5a7060; border-bottom: 2px solid transparent; transition: all .2s; }
+        .tab-btn { flex: 1; padding: 14px; background: none; border: none; font-family: 'Outfit', sans-serif; font-size: 11px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.05em; cursor: pointer; color: #5a7060; border-bottom: 2px solid transparent; transition: all .2s; }
         .tab-btn:hover { background: #f0ece3; }
-        .tab-btn.active { color: #1e5c2e; border-bottom-color: #1e5c2e; font-weight: 600; background: white; }
+        .tab-btn.active { color: #1e5c2e; border-bottom-color: #1e5c2e; font-weight: 700; background: white; }
         .file-dropzone { border: 1px dashed #c8c2b4; border-radius: 4px; padding: 24px; text-align: center; cursor: pointer; background: #faf8f3; margin-bottom: 16px; transition: border-color .2s; }
         .file-dropzone:last-of-type { margin-bottom: 0; }
         .file-dropzone:hover { border-color: #1e5c2e; background: white; }
@@ -883,10 +928,10 @@ export default function AuditPage() {
         .appeal-top  { display: flex; align-items: center; gap: 16px; }
 
         .appeal-badge {
-          font-family: 'Cormorant Garamond', serif;
-          font-size: 20px; font-weight: 600; line-height: 1;
+          font-family: 'Outfit', sans-serif;
+          font-size: 19px; font-weight: 600; line-height: 1;
           padding: 8px 18px; border-radius: 3px; flex-shrink: 0;
-          white-space: nowrap;
+          white-space: nowrap; letter-spacing: -0.01em;
         }
 
         .appeal-bar-wrap { flex: 1; min-width: 0; }
@@ -979,24 +1024,25 @@ export default function AuditPage() {
         .dark-key { font-size: 12px; color: rgba(255,255,255,.45); }
         .dark-val { font-family: 'DM Mono', monospace; font-size: 10px; color: #d8eedd; letter-spacing: .04em; text-align: right; }
 
-        /* ── CHAT ─────────────────────────────────────── */
-        .chat-wrap { width: 100%; }
-        .chat-trigger {
-          width: 100%; padding: 13px 20px; background: #0a0f0d; color: #e8f0ea;
-          border: 1px solid #2d5a3d; border-radius: 4px;
-          font-family: 'DM Mono', monospace; font-size: 10px; letter-spacing: .14em; text-transform: uppercase;
-          cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 10px;
-          transition: all .2s;
+        /* ── VERDICT SECTION ── */
+        .verdict-grid { display: grid; grid-template-columns: 1fr 1.2fr; gap: 16px; margin-bottom: 8px; }
+        .v-card {
+           background: #0a0f0d; border-radius: 4px; padding: 24px;
+           display: flex; flex-direction: column; justify-content: center;
         }
-        .chat-trigger:hover { background: #1a2018; border-color: #4a7c5f; }
-        .ct-icon  { font-size: 14px; color: #4a9d5f; }
-        .ct-badge { font-size: 8px; letter-spacing: .08em; padding: 2px 7px; background: rgba(74,157,95,.15); border: 1px solid rgba(74,157,95,.3); border-radius: 10px; color: #4a9d5f; }
-        .chat-panel { background: white; border: 1px solid #c8c2b4; border-radius: 4px; overflow: hidden; display: flex; flex-direction: column; }
-        .chat-hdr   { padding: 12px 18px; background: #0a0f0d; display: flex; justify-content: space-between; align-items: center; flex-shrink: 0; }
-        .chat-hdr-title { font-family: 'DM Mono', monospace; font-size: 10px; letter-spacing: .12em; text-transform: uppercase; color: #d8eedd; }
-        .chat-hdr-sub   { font-size: 11px; color: rgba(255,255,255,.3); margin-top: 2px; }
-        .chat-close { background: none; border: none; color: rgba(255,255,255,.4); cursor: pointer; font-size: 20px; line-height: 1; padding: 0; transition: color .2s; }
-        .chat-close:hover { color: white; }
+        .v-eyebrow { font-family: 'Outfit', sans-serif; font-size: 10px; font-weight: 600; letter-spacing: .12em; text-transform: uppercase; color: rgba(255,255,255,0.4); margin-bottom: 12px; }
+        .v-main { font-family: 'Outfit', sans-serif; font-size: 30px; font-weight: 600; line-height: 1.1; margin-bottom: 8px; letter-spacing: -0.015em; }
+        .v-sub  { font-size: 13.5px; color: rgba(255,255,255,0.6); line-height: 1.7; }
+        
+        .v-verdict { color: #f0ece3; }
+        .v-verdict.payable     { color: #9dd0aa; }
+        .v-verdict.unlikely    { color: #e08070; }
+        
+        .v-risk { background: #faf8f3; border: 1px solid #c8c2b4; color: #0a0f0d; }
+        .v-risk .v-eyebrow { color: #5a7060; }
+        .v-risk-meter { height: 4px; background: #e8e3d8; border-radius: 2px; margin: 16px 0; overflow: hidden; }
+        .v-risk-fill  { height: 100%; transition: width 1s; }
+
         .chat-dot { width: 6px; height: 6px; border-radius: 50%; }
         .chat-starters { padding: 10px 14px; background: #f5f0e8; border-bottom: 1px solid #e8e3d8; flex-shrink: 0; }
         .starters-label { font-family: 'DM Mono', monospace; font-size: 8px; letter-spacing: .12em; text-transform: uppercase; color: #5a7060; margin-bottom: 7px; }
@@ -1235,8 +1281,11 @@ export default function AuditPage() {
                   </div>
                 )}
 
-                {/* APPEAL DIRECTION INDICATOR */}
-                <div className="rcard">
+                  {/* NEW: VERDICT HEADER */}
+                  <VerdictSection report={report} />
+
+                  {/* APPEAL DIRECTION INDICATOR */}
+                  <div className="rcard">
                   <div className="rcard-hdr">
                     <span className="rcard-title">Status & Verdict</span>
                     <span className="rcard-title" style={{ color: appealCfg?.color }}>
