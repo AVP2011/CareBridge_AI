@@ -23,6 +23,17 @@ class AppealStrength(BaseModel):
     reasoning:  str
 
 
+class RiskFactor(BaseModel):
+    name: str
+    impact: float
+    description: str
+
+class BrokerRiskData(BaseModel):
+    risk_score: float
+    risk_level: str
+    action: str
+    factors: List[RiskFactor] = Field(default_factory=list)
+
 # --------------------------------------------------
 # Final Post-Rejection Report
 # --------------------------------------------------
@@ -47,6 +58,9 @@ class FinalReport(BaseModel):
     # Regulatory & scoring
     regulatory_considerations: str = ""
     appeal_strength:           AppealStrength
+    
+    # NEW: Phase 4 Risk Data
+    risk_data: Optional[BrokerRiskData] = None
 
     # Confidence & notices
     confidence:    ConfidenceLevel
