@@ -168,28 +168,28 @@ class PrePurchaseEngine:
             doc_type = class_res.document_type
             val_conf = class_res.confidence
 
-            if provider_id == "Other providers":
-                is_valid, reason = is_health_insurance_policy(policy_text)
-                if not is_valid:
-                    # Return a minimal report indicating failure
-                    return PrePurchaseReport(
-                        clause_risk=ClauseRiskAssessment(),
-                        score_breakdown=PolicyScoreBreakdown(
-                            base_score=0, adjusted_score=0, rating="Weak", risk_index=1.0
-                        ),
-                        overall_policy_rating="Weak",
-                        summary=f"❌ DOCUMENT REJECTED: {reason}",
-                        checklist_for_buyer=["Upload a valid Health Insurance Policy Wording.", "Ensure PDF text is readable."],
-                        confidence="Low",
-                        irdai_compliance=IRDAICompliance(compliance_flags={}, compliance_score=0, compliance_rating="Low Compliance"),
-                        broker_risk_analysis=BrokerRiskAnalysis(
-                            risk_density_index=1.0, transparency_score=0.0, structural_risk_level="Insufficient Data", 
-                            recommendation="Please submit a valid insurance policy document.", data_sufficient=False
-                        ),
-                        red_flags=["Invalid Document Detected"],
-                        document_type=doc_type,
-                        validation_confidence=val_conf
-                    )
+            # ✅ Now validating ALL uploads, not just "Other providers"
+            is_valid, reason = is_health_insurance_policy(policy_text)
+            if not is_valid:
+                # Return a minimal report indicating failure
+                return PrePurchaseReport(
+                    clause_risk=ClauseRiskAssessment(),
+                    score_breakdown=PolicyScoreBreakdown(
+                        base_score=0, adjusted_score=0, rating="Weak", risk_index=1.0
+                    ),
+                    overall_policy_rating="Weak",
+                    summary=f"❌ DOCUMENT REJECTED: {reason}",
+                    checklist_for_buyer=["Upload a valid Health Insurance Policy Wording.", "Ensure PDF text is readable."],
+                    confidence="Low",
+                    irdai_compliance=IRDAICompliance(compliance_flags={}, compliance_score=0, compliance_rating="Low Compliance"),
+                    broker_risk_analysis=BrokerRiskAnalysis(
+                        risk_density_index=1.0, transparency_score=0.0, structural_risk_level="Insufficient Data", 
+                        recommendation="Please submit a valid insurance policy document.", data_sufficient=False
+                    ),
+                    red_flags=["Invalid Document Detected"],
+                    document_type=doc_type,
+                    validation_confidence=val_conf
+                )
 
         # ─────────────────────────────────────────────────────
         # 0️⃣ PRE-EXTRACTED PROVIDER OVERRIDE
