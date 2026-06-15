@@ -27,7 +27,7 @@ Thumbs.db
 # Jupyter
 .ipynb_checkpoints/
 
-# FAISS index (if generated locally)
+# FAISS index
 rag/indices/
 
 # CareBridge Scratch
@@ -37,11 +37,6 @@ rag_build_log.txt
 rag_build_success.txt
 pres.md
 qn/
-rag/indices/
-
-# CareBridge Scratch
-anti/
-test_results.txt
-rag_build_log.txt
-rag_build_success.txt
-pres.md
+diagnostic_*.py
+benchmark_results.*
+evaluation/benchmark_results.*
