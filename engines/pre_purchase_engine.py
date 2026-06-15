@@ -13,6 +13,7 @@ from services.known_providers_db import get_pre_extracted_clause_risk, get_pre_e
 
 from rag.retrievers import IRDAIRetriever, StandardClauseRetriever
 from services.compliance_bridge import ComplianceBridge
+from services.policy_validator import is_health_insurance_policy
 
 from schemas.pre_purchase import (
     ClauseRiskAssessment,
@@ -155,6 +156,30 @@ class PrePurchaseEngine:
 
     def run(self, policy_text: str, provider_id: str = None, agent_summary: str = None) -> PrePurchaseReport:
         # ─────────────────────────────────────────────────────
+        # 🔍 INTELLIGENT POLICY VALIDATION
+        # ─────────────────────────────────────────────────────
+        if policy_text and provider_id == "Other providers":
+            is_valid, reason = is_health_insurance_policy(policy_text)
+            if not is_valid:
+                # Return a minimal report indicating failure
+                return PrePurchaseReport(
+                    clause_risk=ClauseRiskAssessment(),
+                    score_breakdown=PolicyScoreBreakdown(
+                        base_score=0, adjusted_score=0, rating="Weak", risk_index=1.0
+                    ),
+                    overall_policy_rating="Weak",
+                    summary=f"❌ DOCUMENT REJECTED: {reason}",
+                    checklist_for_buyer=["Upload a valid Health Insurance Policy Wording.", "Ensure PDF text is readable."],
+                    confidence="Low",
+                    irdai_compliance=IRDAICompliance(compliance_flags={}, compliance_score=0, compliance_rating="Low Compliance"),
+                    broker_risk_analysis=BrokerRiskAnalysis(
+                        risk_density_index=1.0, transparency_score=0.0, structural_risk_level="Insufficient Data", 
+                        recommendation="Please submit a valid insurance policy document.", data_sufficient=False
+                    ),
+                    red_flags=["Invalid Document Detected"]
+                )
+
+        # ─────────────────────────────────────────────────────
         # 0️⃣ PRE-EXTRACTED PROVIDER OVERRIDE
         # ─────────────────────────────────────────────────────
         if provider_id and provider_id != "Other providers":
@@ -164,7 +189,11 @@ class PrePurchaseEngine:
             if pre_extracted:
                 clause_risk = ClauseRiskAssessment(**pre_extracted)
                 summary = get_pre_extracted_summary(provider_id)
-                compliance_dict = evaluate_irdai_compliance("").model_dump() # dummy empty string since not needed
+                compliance_dict = evaluate_irdai_compliance("").model_dump() 
+                # ✅ For known providers, assume Moderate-High compliance default (5.0/7) if text is missing
+                # so the score isn't unfairly penalised by empty text search
+                compliance_dict["compliance_score"] = 5.0 
+                compliance_dict["compliance_rating"] = "Moderate Compliance"
                 
                 broker_risk_analysis = BrokerRiskAnalysis(
                     **analyze_broker_risk(clause_risk=clause_risk, compliance_data=compliance_dict)
@@ -368,9 +397,12 @@ class PrePurchaseEngine:
         score = max(0.0, min(score, 100.0))
         rating = "Strong" if score >= 80 else "Moderate" if score >= 55 else "Weak"
 
-        # Compression: Deduplicate and Cap Flags
-        red_flags = list(dict.fromkeys(score_data.get("red_flags", [])))[:3]
-        pos_flags = list(dict.fromkeys(score_data.get("positive_flags", [])))[:3]
+        # Compression: Merge scoring flags with LLM flags then Deduplicate and Cap
+        llm_red = parsed.get("red_flags", []) if parsed else []
+        llm_pos = parsed.get("positive_flags", []) if parsed else []
+        
+        red_flags = list(dict.fromkeys(score_data.get("red_flags", []) + llm_red))[:4]
+        pos_flags = list(dict.fromkeys(score_data.get("positive_flags", []) + llm_pos))[:4]
         
         # Capture regulatory citations
         reg_citations = parsed.get("regulatory_citations", []) if parsed else []

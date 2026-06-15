@@ -19,12 +19,21 @@ class RobustPDFExtractor:
     Multi-strategy PDF text extractor with automatic fallback
     """
     
-    def __init__(self):
-        self.extraction_methods = [
-            self._extract_with_pdfplumber,  # Best for most PDFs
-            self._extract_with_pypdf2,      # Fallback 1
-            self._extract_with_ocr,         # Fallback 2 (scanned PDFs)
-        ]
+    def __init__(self, enable_ocr: bool = False):
+        self.enable_ocr = enable_ocr
+        if enable_ocr:
+            # If OCR is explicitly enabled/enforced, we try it sooner or ensure it's in the list
+            self.extraction_methods = [
+                self._extract_with_pdfplumber,
+                self._extract_with_ocr,        # Move OCR up if enforced
+                self._extract_with_pypdf2,
+            ]
+        else:
+            self.extraction_methods = [
+                self._extract_with_pdfplumber,
+                self._extract_with_pypdf2,
+                self._extract_with_ocr,         # Fallback 2 (scanned PDFs)
+            ]
     
     def extract_text(self, pdf_path: str) -> Tuple[str, str]:
         """
