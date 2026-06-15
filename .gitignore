@@ -28,3 +28,20 @@ Thumbs.db
 .ipynb_checkpoints/
 
 # FAISS index (if generated locally)
+rag/indices/
+
+# CareBridge Scratch
+anti/
+test_results.txt
+rag_build_log.txt
+rag_build_success.txt
+pres.md
+qn/
+rag/indices/
+
+# CareBridge Scratch
+anti/
+test_results.txt
+rag_build_log.txt
+rag_build_success.txt
+pres.md

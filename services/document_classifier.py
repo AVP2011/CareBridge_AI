@@ -1,12 +1,12 @@
 import re
-from typing import Dict, List, Tuple, Optional
+from typing import Dict, Any, List, Tuple, Optional
 from pydantic import BaseModel
 
 class ClassificationResult(BaseModel):
     document_type: str
     confidence: float
     reasoning: str
-    metadata: Dict[str, any] = {}
+    metadata: Dict[str, Any] = {}
 
 class DocumentClassifier:
     """
