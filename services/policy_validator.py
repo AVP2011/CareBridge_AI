@@ -27,37 +27,38 @@ STRONG_KEYWORDS = [
     r"room rent",
 ]
 
+from services.document_classifier import DocumentClassifier
+
 def is_health_insurance_policy(text: str) -> Tuple[bool, str]:
     """
-    Analyzes the text to determine if it's a health insurance policy document.
+    Analyzes the text using the DocumentClassifier to verify it's a health policy.
     Returns (is_policy, reason).
     """
     if not text or len(text.strip()) < 200:
         return False, "Document is too short to be a valid health insurance policy."
 
-    text_lower = text.lower()
-    
-    # 1. Check for mandatory insurance keywords
-    mandatory_count = sum(1 for k in MANDATORY_KEYWORDS if re.search(k, text_lower))
-    
-    # 2. Check for strong health insurance specific keywords
-    strong_count = sum(1 for k in STRONG_KEYWORDS if re.search(k, text_lower))
-    
-    # Logic for validation
-    # If we have at least 4 mandatory and 2 strong keywords, we consider it a policy.
-    # Adjusting for OCR quality: sometimes text is garbled, so we use lower thresholds if needed.
-    
-    if mandatory_count >= 3 and strong_count >= 2:
-        return True, "Valid health insurance policy detected."
-    
-    if mandatory_count >= 5:
-        return True, "General insurance document detected (likely health)."
+    classifier = DocumentClassifier()
+    result = classifier.classify(text)
 
-    # 3. Last fallback: Check for very specific phrases
-    if "irdai" in text_lower and "health insurance" in text_lower:
-        return True, "Official IRDAI health insurance document detected."
+    if result.document_type == "HEALTH_POLICY":
+        if result.confidence >= 0.5:
+            return True, "Valid health insurance policy detected."
+        else:
+            return False, "Document looks like a policy but has low clarity (OCR issue?). Please upload a better scan."
 
-    return False, "This document does not look like a health insurance policy. Please upload a valid Policy Wording or Schedule."
+    if result.document_type == "INSURANCE_BROCHURE":
+        return False, "This looks like a Marketing Brochure. Please upload the 'Policy Wording' or 'Policy Schedule' for analysis."
+
+    if result.document_type == "CLAIM_REJECTION":
+        return False, "This looks like a Claim Rejection Letter. Please use the 'Audit Rejection' tool instead."
+
+    if result.document_type == "MEDICAL_RECORD":
+        return False, "This is a Medical Record / Discharge Summary. Analysis is only performed on Insurance Policies."
+
+    if result.document_type == "HOSPITAL_BILL":
+        return False, "This is a Hospital Bill. Analysis is only performed on Insurance Policies."
+
+    return False, f"Document rejected: {result.reasoning} Please upload a standard Health Insurance Policy document."
 
 if __name__ == "__main__":
     # Small test

@@ -6,7 +6,7 @@ from typing import Any, Dict, List, Literal, Optional
 # Shared Type Aliases
 # --------------------------------------------------
 
-RiskLevel = Literal["Low Risk", "Moderate Risk", "High Risk", "Not Found"]
+RiskLevel = Literal["Low Risk", "Moderate Risk", "High Risk", "Not Found", "Not Mentioned"]
 RatingLevel = Literal["Strong", "Moderate", "Weak"]
 ConfidenceLevel = Literal["High", "Medium", "Low"]
 
@@ -50,12 +50,28 @@ class IRDAICompliance(BaseModel):
 # Policy Score Breakdown
 # --------------------------------------------------
 
+class ScoreAdjustment(BaseModel):
+    """A single score delta with reasoning."""
+    source: str
+    impact: float
+    description: str
+
+class ScoreExplainability(BaseModel):
+    """Detailed breakdown of how the final score was computed."""
+    base_score:     float
+    deductions:     List[ScoreAdjustment]
+    additions:      List[ScoreAdjustment]
+    compliance_contribution: float
+    final_score:    float
+    reasoning:      str
+
 class PolicyScoreBreakdown(BaseModel):
     """Final scoring output after all adjustments."""
     base_score:     float
     adjusted_score: float = Field(ge=0.0, le=100.0)
     rating:         RatingLevel
     risk_index:     float = Field(ge=0.0, le=1.0)
+    explainability: Optional[ScoreExplainability] = None
 
 
 # --------------------------------------------------
@@ -112,3 +128,7 @@ class PrePurchaseReport(BaseModel):
     regulatory_citations: List[str] = Field(default_factory=list)
     red_flags:      List[str] = Field(default_factory=list)
     positive_flags: List[str] = Field(default_factory=list)
+
+    # ✅ Document Intelligence (Task 2)
+    document_type: str = "UNKNOWN"
+    validation_confidence: float = 0.0

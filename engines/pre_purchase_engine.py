@@ -14,6 +14,7 @@ from services.known_providers_db import get_pre_extracted_clause_risk, get_pre_e
 from rag.retrievers import IRDAIRetriever, StandardClauseRetriever
 from services.compliance_bridge import ComplianceBridge
 from services.policy_validator import is_health_insurance_policy
+from services.document_classifier import DocumentClassifier
 
 from schemas.pre_purchase import (
     ClauseRiskAssessment,
@@ -142,6 +143,7 @@ class PrePurchaseEngine:
         self.model = model
         self.tokenizer = tokenizer
         self.bridge = ComplianceBridge()
+        self.classifier = DocumentClassifier()
         
         # Initialize RAG Components
         rag_dir = os.path.join(Path(__file__).parent.parent, "rag", "indices")
@@ -156,28 +158,38 @@ class PrePurchaseEngine:
 
     def run(self, policy_text: str, provider_id: str = None, agent_summary: str = None) -> PrePurchaseReport:
         # ─────────────────────────────────────────────────────
-        # 🔍 INTELLIGENT POLICY VALIDATION
+        # 🔍 INTELLIGENT POLICY VALIDATION & CLASSIFICATION
         # ─────────────────────────────────────────────────────
-        if policy_text and provider_id == "Other providers":
-            is_valid, reason = is_health_insurance_policy(policy_text)
-            if not is_valid:
-                # Return a minimal report indicating failure
-                return PrePurchaseReport(
-                    clause_risk=ClauseRiskAssessment(),
-                    score_breakdown=PolicyScoreBreakdown(
-                        base_score=0, adjusted_score=0, rating="Weak", risk_index=1.0
-                    ),
-                    overall_policy_rating="Weak",
-                    summary=f"❌ DOCUMENT REJECTED: {reason}",
-                    checklist_for_buyer=["Upload a valid Health Insurance Policy Wording.", "Ensure PDF text is readable."],
-                    confidence="Low",
-                    irdai_compliance=IRDAICompliance(compliance_flags={}, compliance_score=0, compliance_rating="Low Compliance"),
-                    broker_risk_analysis=BrokerRiskAnalysis(
-                        risk_density_index=1.0, transparency_score=0.0, structural_risk_level="Insufficient Data", 
-                        recommendation="Please submit a valid insurance policy document.", data_sufficient=False
-                    ),
-                    red_flags=["Invalid Document Detected"]
-                )
+        doc_type = "UNKNOWN"
+        val_conf = 0.0
+
+        if policy_text:
+            class_res = self.classifier.classify(policy_text)
+            doc_type = class_res.document_type
+            val_conf = class_res.confidence
+
+            if provider_id == "Other providers":
+                is_valid, reason = is_health_insurance_policy(policy_text)
+                if not is_valid:
+                    # Return a minimal report indicating failure
+                    return PrePurchaseReport(
+                        clause_risk=ClauseRiskAssessment(),
+                        score_breakdown=PolicyScoreBreakdown(
+                            base_score=0, adjusted_score=0, rating="Weak", risk_index=1.0
+                        ),
+                        overall_policy_rating="Weak",
+                        summary=f"❌ DOCUMENT REJECTED: {reason}",
+                        checklist_for_buyer=["Upload a valid Health Insurance Policy Wording.", "Ensure PDF text is readable."],
+                        confidence="Low",
+                        irdai_compliance=IRDAICompliance(compliance_flags={}, compliance_score=0, compliance_rating="Low Compliance"),
+                        broker_risk_analysis=BrokerRiskAnalysis(
+                            risk_density_index=1.0, transparency_score=0.0, structural_risk_level="Insufficient Data", 
+                            recommendation="Please submit a valid insurance policy document.", data_sufficient=False
+                        ),
+                        red_flags=["Invalid Document Detected"],
+                        document_type=doc_type,
+                        validation_confidence=val_conf
+                    )
 
         # ─────────────────────────────────────────────────────
         # 0️⃣ PRE-EXTRACTED PROVIDER OVERRIDE
@@ -342,7 +354,7 @@ class PrePurchaseEngine:
         # 4️⃣ STRUCTURE & OVERRIDE
         # ─────────────────────────────────────────────────────
         risk_data = parsed.get("clause_risk", {}) if parsed else _NOT_FOUND_DEFAULTS
-        _VALID = {"High Risk", "Moderate Risk", "Low Risk", "Not Found"}
+        _VALID = {"High Risk", "Moderate Risk", "Low Risk", "Not Found", "Not Mentioned"}
         for key in _NOT_FOUND_DEFAULTS:
             val = risk_data.get(key, "Not Found")
             risk_data[key] = val if val in _VALID else "Not Found"
@@ -433,6 +445,7 @@ class PrePurchaseEngine:
                 adjusted_score=score,
                 rating=rating,
                 risk_index=score_data.get("risk_index", 0.5),
+                explainability=score_data.get("explainability"),
             ),
             overall_policy_rating=rating,
             summary=f"Analysis completed using IRDAI RAG + Agent Fact-Check validation.",
@@ -444,4 +457,6 @@ class PrePurchaseEngine:
             regulatory_citations=reg_citations,
             red_flags=red_flags,
             positive_flags=pos_flags,
+            document_type=doc_type,
+            validation_confidence=val_conf,
         )

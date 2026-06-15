@@ -1,0 +1,23 @@
+[
+    {
+        "filename": "star_health_optima.pdf",
+        "document_type": "HEALTH_POLICY",
+        "expected_clauses": {
+            "waiting_period": "Moderate Risk",
+            "pre_existing_disease": "High Risk",
+            "co_payment": "Low Risk"
+        },
+        "expected_compliance_score": 6.0,
+        "is_valid": true
+    },
+    {
+        "filename": "random_invoice.pdf",
+        "document_type": "NON_INSURANCE",
+        "is_valid": false
+    },
+    {
+        "filename": "hospital_discharge_summary.pdf",
+        "document_type": "MEDICAL_RECORD",
+        "is_valid": false
+    }
+]
