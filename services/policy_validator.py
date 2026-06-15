@@ -39,12 +39,19 @@ def is_health_insurance_policy(text: str) -> Tuple[bool, str]:
 
     classifier = DocumentClassifier()
     result = classifier.classify(text)
+    text_lower = text.lower()
 
     if result.document_type == "HEALTH_POLICY":
+        # 🛡️ Hardened Layer: Mandatory Keyword Threshold
+        mandatory_matches = [kw for kw in MANDATORY_KEYWORDS if re.search(kw, text_lower)]
+        
+        if len(mandatory_matches) < 3:
+            return False, f"Document classified as Policy but lacks critical insurance markers (found only {len(mandatory_matches)}: {', '.join(mandatory_matches)}). Please upload a valid Policy Wording."
+        
         if result.confidence >= 0.5:
             return True, "Valid health insurance policy detected."
         else:
-            return False, "Document looks like a policy but has low clarity (OCR issue?). Please upload a better scan."
+            return False, "Document looks like a policy but has low clarity. Please upload a better scan."
 
     if result.document_type == "INSURANCE_BROCHURE":
         return False, "This looks like a Marketing Brochure. Please upload the 'Policy Wording' or 'Policy Schedule' for analysis."

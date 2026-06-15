@@ -15,8 +15,8 @@ class DocumentClassifier:
     
     CLASSES = {
         "HEALTH_POLICY": {
-            "keywords": [r"policy schedule", r"sum insured", r"waiting period", r"standard exclusion", r"insurer", r"certificate of insurance"],
-            "weight": 2.0
+            "keywords": [r"policy schedule", r"sum insured", r"waiting period", r"standard exclusion", r"irdai registration", r"certificate of insurance", r"policy number", r"contract of insurance"],
+            "weight": 2.5
         },
         "INSURANCE_BROCHURE": {
             "keywords": [r"marketing", r"brochure", r"why buy", r"product highlight", r"illustrative", r"brochure code"],
