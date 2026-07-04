@@ -24,7 +24,7 @@ Making health insurance understandable, transparent, and actionable for every po
 
 > **Demo Video**
 
-https://github.com/
+https://github.com/carebridge-ui/public/Carebridge1.mp4
 
 ---
 
