@@ -49,8 +49,8 @@ HARD_REJECT_SIGNALS = {
         "threshold": 2,
     },
     "Academic Document": {
-        "keywords": [r"timetable", r"syllabus", r"semester", r"examination schedule",
-                     r"roll number", r"class teacher", r"lecture hall"],
+        "keywords": [r"timetable", r"syllabus", r"semester", r"examination\s*(schedule|timetable|hall ticket)",
+                     r"roll\s*number\b", r"class\s*teacher\b", r"lecture\s*hall\b"],
         "threshold": 2,
     },
     "Financial Statement": {

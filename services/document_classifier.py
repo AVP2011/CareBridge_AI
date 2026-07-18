@@ -42,8 +42,8 @@ class DocumentClassifier:
         "ACADEMIC": {
             "keywords": [
                 r"\btimetable\b", r"\bschedule of classes\b", r"\bsyllabus\b",
-                r"\bsemester\b", r"\bexamination\b", r"\bmarks\b",
-                r"\buniversity\b", r"\bcollege\b", r"\bstudent\b",
+                r"\bsemester\b", r"examination\s*(schedule|timetable|hall ticket)", r"\bmarksheet\b",
+                r"\buniversity\b", r"college\s*(timetable|schedule|exam)", r"\bstudent\s*name\b",
                 r"\broll number\b", r"\bassignment\b", r"\blecture\b",
                 r"\bperiod\b.*\bsubject\b", r"\bteacher\b", r"\bprincipal\b",
             ],
