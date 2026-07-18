@@ -37,9 +37,13 @@ def test_engine():
             "red_flags": ["R1", "R2", "R3", "R4"]
         })
 
-    # Manually monkeypatch generate
+    # Manually monkeypatch generate and validator
     original_generate = engines.pre_purchase_engine.generate
     engines.pre_purchase_engine.generate = mock_generate
+    
+    import engines.pre_purchase_engine
+    original_validator = engines.pre_purchase_engine.is_health_insurance_policy
+    engines.pre_purchase_engine.is_health_insurance_policy = lambda text: (True, "mocked")
     
     engine.irdai_retriever = None
     engine.standard_retriever = None
@@ -73,6 +77,7 @@ def test_engine():
         
     finally:
         engines.pre_purchase_engine.generate = original_generate
+        engines.pre_purchase_engine.is_health_insurance_policy = original_validator
 
 if __name__ == "__main__":
     test_engine()

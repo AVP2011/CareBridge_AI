@@ -413,8 +413,8 @@ class PrePurchaseEngine:
         llm_red = parsed.get("red_flags", []) if parsed else []
         llm_pos = parsed.get("positive_flags", []) if parsed else []
         
-        red_flags = list(dict.fromkeys(score_data.get("red_flags", []) + llm_red))[:4]
-        pos_flags = list(dict.fromkeys(score_data.get("positive_flags", []) + llm_pos))[:4]
+        red_flags = list(dict.fromkeys(score_data.get("red_flags", []) + llm_red))[:3]
+        pos_flags = list(dict.fromkeys(score_data.get("positive_flags", []) + llm_pos))[:3]
         
         # Capture regulatory citations
         reg_citations = parsed.get("regulatory_citations", []) if parsed else []
