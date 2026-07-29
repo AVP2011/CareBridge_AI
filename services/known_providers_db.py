@@ -284,65 +284,92 @@ def get_pre_extracted_clause_risk(provider_name: str) -> dict:
     """
     Given a known provider name, convert their raw clauses into the
     10-field ClauseRiskAssessment schema.
+
+    Default philosophy:
+      - 'Not Mentioned' = the policy/DB has no evidence the benefit exists
+                          (scored with a penalty — consumer is at risk)
+      - 'Not Found'     = text extraction failed for that clause
+                          (no penalty — system limitation, not policy flaw)
     """
     provider = next((p for p in _RAW_PROVIDER_DATA if p.get("insurer") == provider_name), None)
     if not provider:
         return None
-    
-    # Default everything to 'Low Risk' or 'Moderate Risk' and adjust based on clauses
+
+    # ── Defaults ────────────────────────────────────────────────────────────
+    # restoration_benefit → 'Not Mentioned': none of the DB providers
+    #   explicitly offer restoration — default must trigger the -8 penalty.
+    #   Using 'Not Found' was silently inflating every score by +8 pts.
+    #
+    # exclusions_clarity → 'High Risk': all known providers carry standard
+    #   non-payable / consumables exclusions; until we see an explicit
+    #   "cleared exclusions" clause, conservative grading applies.
     risk_assessment = {
-        "waiting_period": "Low Risk",
-        "pre_existing_disease": "Low Risk",
-        "room_rent_sublimit": "Low Risk",
-        "disease_specific_caps": "Low Risk",
-        "co_payment": "Low Risk",
-        "exclusions_clarity": "Moderate Risk",
+        "waiting_period":             "Low Risk",
+        "pre_existing_disease":       "Low Risk",
+        "room_rent_sublimit":         "Low Risk",
+        "disease_specific_caps":      "Low Risk",
+        "co_payment":                 "Low Risk",
+        "exclusions_clarity":         "High Risk",   # FIX: was "Moderate Risk"
         "claim_procedure_complexity": "Low Risk",
-        "sublimits_and_caps": "Low Risk",
-        "restoration_benefit": "Not Found",
-        "transparency_of_terms": "Low Risk",
+        "sublimits_and_caps":         "Low Risk",
+        "restoration_benefit":        "Not Mentioned",  # FIX: was "Not Found"
+        "transparency_of_terms":      "Low Risk",
     }
-    
+
     raw_clauses = provider.get("clauses", [])
-    
+
     for c in raw_clauses:
         title = c.get("title", "").lower()
-        cat = c.get("category", "").lower()
-        desc = c.get("description", "").lower()
-        
-        # Pre-existing
+        cat   = c.get("category", c.get("clause_type", "")).lower()
+        desc  = c.get("description", "").lower()
+
+        # ── Pre-existing Disease ─────────────────────────────────────────
         if "pre-existing" in title or "ped" in title:
             months = c.get("waiting_period_months", 0)
-            if "48 month" in desc or months == 48:
+
+            # Some providers use a "waiting_period" string field (e.g. ICICI)
+            wp_str = c.get("waiting_period", "").lower()
+
+            if "48 month" in desc or months == 48 or "48" in wp_str:
                 risk_assessment["pre_existing_disease"] = "High Risk"
-            elif "36 month" in desc or months == 36:
+            elif "36 month" in desc or months == 36 or "36" in wp_str:
                 risk_assessment["pre_existing_disease"] = "High Risk"
-            elif "24 month" in desc or months == 24:
+            elif "24 month" in desc or months == 24 or "24" in wp_str:
+                # 24-month PED is Moderate (better than industry standard 36)
                 risk_assessment["pre_existing_disease"] = "Moderate Risk"
-                
-        # Waiting period
+
+        # ── General Waiting Period ───────────────────────────────────────
         if "waiting" in title and "specific" not in title and "pre-existing" not in title:
             days = c.get("waiting_period_days", 0)
             if days >= 30:
                 risk_assessment["waiting_period"] = "Moderate Risk"
-                
-        # Room rent
+
+        # ── Room Rent ────────────────────────────────────────────────────
         if "room rent" in title or "room rent" in cat:
             risk_assessment["room_rent_sublimit"] = "Moderate Risk"
-            
-        # Non-payable / exclusions
+
+        # ── Non-payable / Exclusion Clarity ─────────────────────────────
+        # Already defaulting to High Risk; upgrade is a no-op,
+        # but kept for explicit traceability.
         if "non-payable" in title or "non-medical" in cat or "consumables" in title:
             risk_assessment["exclusions_clarity"] = "High Risk"
-            
-        # Specific disease waiting (often 24 months)
+
+        # ── Specific Disease Waiting ─────────────────────────────────────
         if "specific disease" in title or "specific condition" in cat:
             risk_assessment["disease_specific_caps"] = "Moderate Risk"
-            
-        # Co-pay
+
+        # ── Co-payment ───────────────────────────────────────────────────
         if "co-pay" in title or "co-payment" in cat:
             risk_assessment["co_payment"] = "High Risk"
 
+        # ── Restoration Benefit ──────────────────────────────────────────
+        # If the provider's raw data explicitly mentions restoration,
+        # upgrade from 'Not Mentioned' to the appropriate risk level.
+        if "restoration" in title or "restoration" in cat or "restoration" in desc:
+            risk_assessment["restoration_benefit"] = "Low Risk"
+
     return risk_assessment
+
 
 def get_pre_extracted_summary(provider_name: str) -> str:
     provider = next((p for p in _RAW_PROVIDER_DATA if p.get("insurer") == provider_name), None)
